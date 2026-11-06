@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rueda cromática</title>
+<meta name="description" content="Una rueda cromática digital e interactiva: girá el dial, descubrí armonías de color, mezclá pinturas y jugá a adivinar mezclas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F0E8; --card:#FBF9F4; --ink:#1F1D1A; --muted:#6B645A; --line:#E3DCCF;
+  --radius:20px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Inter",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.serif{font-family:"Fraunces",Georgia,serif;font-weight:500;letter-spacing:-.01em}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip{position:absolute;left:12px;top:-60px;background:var(--ink);color:#fff;padding:10px 14px;border-radius:10px;z-index:100;text-decoration:none}
+.skip:focus{top:12px}
+
+/* Header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;padding:22px clamp(16px,4vw,40px);max-width:1240px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-mark{width:42px;height:42px;border-radius:50%;flex:none;background:conic-gradient(#F7D417,#F7AE1A,#F2832A,#EC5A2C,#E1302F,#BE2C6C,#7D3F9E,#4C41A6,#2D5CC5,#16999A,#36A649,#A3C43A,#F7D417);position:relative;animation:spin 30s linear infinite}
+.brand-mark::after{content:"";position:absolute;inset:11px;border-radius:50%;background:var(--bg)}
+h1{font-size:1.6rem;margin:0;line-height:1.1}
+.sub{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+.tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px}
+.tab{border:0;background:transparent;padding:8px 18px;border-radius:999px;font-size:.95rem;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--ink);color:#fff}
+.icon-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:.88rem;color:var(--muted)}
+.icon-btn[aria-pressed="true"]{color:var(--ink)}
+.icon-btn[aria-pressed="false"] .wave{opacity:.25}
+
+main{max-width:1240px;margin:0 auto;padding:4px clamp(16px,4vw,40px) 40px}
+.view[hidden]{display:none}
+.view{animation:fade .35s ease}
+
+/* Cards and common bits */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:clamp(18px,2.4vw,26px)}
+.h2{font-size:1.25rem;margin:0 0 12px}
+.eyebrow{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600}
+.desc{margin:12px 0 0;color:var(--muted);max-width:52ch}
+.small{font-size:.86rem}
+.muted{color:var(--muted)}
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.row-between .h2{margin:0}
+.primary{background:var(--ink);color:#fff;border:0;border-radius:999px;padding:11px 20px;font-weight:500;cursor:pointer;transition:transform .15s,opacity .2s}
+.primary:hover:not(:disabled){transform:translateY(-1px)}
+.primary:active:not(:disabled){transform:scale(.97)}
+.primary:disabled{opacity:.35;cursor:default}
+.ghost{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:.88rem;cursor:pointer;transition:border-color .2s}
+.ghost:hover:not(:disabled){border-color:var(--ink)}
+.ghost:disabled{opacity:.4;cursor:default}
+.round{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:1.1rem;cursor:pointer;transition:border-color .2s,transform .15s}
+.round:hover{border-color:var(--ink)}
+.round:active{transform:scale(.92)}
+
+/* Wheel layout */
+.wheel-layout{display:grid;gap:28px;grid-template-columns:1fr}
+@media (min-width:980px){
+  .wheel-layout{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start}
+  .wheel-stage{position:sticky;top:16px}
+}
+.wheel-stage{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+#wheel{width:min(100%,560px);aspect-ratio:1;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;display:block}
+#wheel.dragging{cursor:grabbing}
+#wheel:focus-visible{outline:none}
+#wheel .focus-ring{fill:none;stroke:transparent;stroke-width:2.5}
+#wheel:focus-visible .focus-ring{stroke:var(--ink)}
+.seg{cursor:pointer}
+.seg path{stroke:var(--bg);stroke-width:2.5;transition:opacity .35s ease}
+.dial-base{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+#dial{transition:transform .55s cubic-bezier(.2,.8,.2,1)}
+#wheel.dragging #dial{transition:none}
+#dial.spin{transition:transform 1.5s cubic-bezier(.12,.85,.18,1)}
+.shape{fill:rgba(31,29,26,.06);stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
+.shape.ring{fill:none;stroke-dasharray:3 6;stroke-linecap:round}
+.spoke{stroke:var(--ink);stroke-width:1.4;stroke-dasharray:2 6;stroke-linecap:round;opacity:.5}
+.marker{fill:none;stroke:#fff;stroke-width:6}
+.marker-in{fill:none;stroke:var(--ink);stroke-width:1.6}
+.pointer{fill:var(--ink)}
+#keyDot{stroke:#fff;stroke-width:5;transition:fill .3s}
+.key-info{display:grid;gap:2px}
+.key-name{font-family:"Fraunces",Georgia,serif;font-size:clamp(1.6rem,3vw,2.1rem);line-height:1.1}
+.key-hex{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem;letter-spacing:.04em}
+.wheel-controls{display:flex;align-items:center;gap:12px}
+.hint{margin:0;color:var(--muted);font-size:.86rem}
+
+.switch{display:inline-flex;align-items:center;gap:10px;cursor:pointer;font-size:.92rem;user-select:none}
+.switch input{position:absolute;opacity:0;width:1px;height:1px}
+.track{width:40px;height:24px;border-radius:999px;background:var(--line);position:relative;transition:background .2s;flex:none}
+.track::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+.switch input:checked + .track{background:var(--ink)}
+.switch input:checked + .track::after{transform:translateX(16px)}
+.switch input:focus-visible + .track{outline:2px solid var(--ink);outline-offset:2px}
+
+.panel{display:grid;gap:18px}
+
+/* Harmony chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px;border:0;padding:0;margin:0;min-width:0}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;width:1px;height:1px}
+.chip span{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;cursor:pointer;background:#fff;font-size:.9rem;transition:background .2s,color .2s,border-color .2s}
+.chip span:hover{border-color:var(--ink)}
+.chip input:checked + span{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip input:focus-visible + span{outline:2px solid var(--ink);outline-offset:2px}
+.chip svg{width:16px;height:16px;flex:none}
+
+/* Variant segmented */
+.segmented{display:flex;border:1px solid var(--line);border-radius:14px;padding:3px;background:#fff;margin:0 0 6px;min-width:0;transition:opacity .2s}
+.segmented legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.segmented label{flex:1;position:relative}
+.segmented input{position:absolute;opacity:0;width:1px;height:1px}
+.segmented span{display:block;text-align:center;padding:8px 6px;border-radius:11px;cursor:pointer;font-size:.9rem;color:var(--muted);transition:background .2s,color .2s}
+.segmented input:checked + span{background:var(--bg);color:var(--ink);font-weight:600}
+.segmented input:focus-visible + span{outline:2px solid var(--ink)}
+.segmented:disabled{opacity:.4}
+.segmented:disabled span{cursor:default}
+
+/* Swatches */
+.swatches{list-style:none;padding:0;margin:14px 0 10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px}
+.swatch{width:100%;min-height:132px;border:0;border-radius:16px;padding:12px;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;gap:2px;text-align:left;cursor:pointer;transition:transform .2s ease,box-shadow .2s;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.swatch:hover{transform:translateY(-3px);box-shadow:inset 0 0 0 1px rgba(0,0,0,.06),0 8px 18px rgba(0,0,0,.08)}
+.swatch:active{transform:scale(.97)}
+.sw-name{font-size:.82rem;font-weight:600;line-height:1.2}
+.sw-hex{font-size:.78rem;opacity:.85;font-variant-numeric:tabular-nums;letter-spacing:.03em}
+.badge{margin-bottom:auto;font-size:.64rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.75);color:var(--ink)}
+.export{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Mock */
+.mock{--m-bg:#fff;--m-head:#000;--m-body:#333;--m-btn:#000;--m-btn-ink:#fff;--m-tag:#eee;--m-tag-ink:#000;background:var(--m-bg);border-radius:16px;padding:24px;display:grid;gap:10px;justify-items:start;transition:background .4s}
+.mock-tag{background:var(--m-tag);color:var(--m-tag-ink);font-size:.7rem;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.08em;transition:background .4s,color .4s}
+.mock h3{margin:0;font-size:1.55rem;color:var(--m-head);transition:color .4s}
+.mock p{margin:0;color:var(--m-body);font-size:.92rem;max-width:36ch;transition:color .4s}
+.mock-dots{display:flex;gap:6px}
+.mock-dots i{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.mock-btn{background:var(--m-btn);color:var(--m-btn-ink);padding:10px 18px;border-radius:999px;font-weight:600;font-size:.9rem;margin-top:4px;transition:background .4s,color .4s}
+.contrast{margin:12px 0 0;display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;gap:6px;align-items:center;font-size:.8rem;padding:5px 10px;border-radius:999px;background:#fff;border:1px solid var(--line)}
+.pill b{font-weight:600}
+.pill.ok b{color:#1F7A3D}
+.pill.bad b{color:#B3261E}
+
+/* Mixer */
+.two-col{display:grid;gap:22px;grid-template-columns:1fr}
+@media (min-width:900px){.two-col{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}}
+.mixer{display:grid;gap:22px;justify-items:center;margin-top:18px}
+.tubes{display:flex;flex-wrap:wrap;gap:12px 14px;justify-content:center}
+.tube{display:flex;flex-direction:column;align-items:center;gap:6px}
+.paint{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;cursor:pointer;padding:4px;border-radius:14px;font-size:.84rem}
+.blob{width:60px;height:60px;border-radius:50%;background:var(--c);box-shadow:inset -7px -9px 0 rgba(0,0,0,.12),inset 7px 7px 0 rgba(255,255,255,.28),0 0 0 1px rgba(0,0,0,.09),0 4px 10px rgba(0,0,0,.06);transition:transform .18s cubic-bezier(.3,.9,.4,1.4)}
+.paint:hover .blob{transform:translateY(-4px) scale(1.06)}
+.paint:active .blob{transform:scale(.9)}
+.stepper{display:flex;align-items:center;gap:6px}
+.mini{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:#fff;cursor:pointer;line-height:1;font-size:1rem}
+.mini:disabled{opacity:.3;cursor:default}
+.count{min-width:1.3em;text-align:center;font-variant-numeric:tabular-nums;font-weight:600}
+.bowl-wrap{position:relative;width:min(250px,72vw);aspect-ratio:1}
+.bowl{position:absolute;inset:0;border-radius:50%;background:#fff;border:1px solid var(--line);box-shadow:inset 0 8px 22px rgba(0,0,0,.09);overflow:hidden;display:grid;place-items:center}
+.bowl.bump{animation:bump .35s ease}
+.bowl .fill{position:absolute;inset:13%;border-radius:50%;transform:scale(0);transition:transform .5s cubic-bezier(.2,.9,.3,1.3),background-color .6s ease}
+.bowl.has .fill{transform:scale(1)}
+.swirl{position:absolute;inset:13%;border-radius:50%;background:conic-gradient(from 0deg,rgba(255,255,255,.24),transparent 28%,rgba(255,255,255,.14) 52%,transparent 78%);opacity:0;transition:opacity .4s;animation:spin 8s linear infinite}
+.bowl.has .swirl{opacity:1}
+.bowl-empty{color:var(--muted);font-size:.9rem;text-align:center;position:relative}
+.bowl.has .bowl-empty{display:none}
+.drop{position:absolute;left:50%;top:0;width:22px;height:22px;margin-left:-11px;background:var(--c);border-radius:0 50% 50% 50%;box-shadow:0 0 0 1px rgba(0,0,0,.1);z-index:2;pointer-events:none;animation:drop .5s cubic-bezier(.55,0,1,.45) forwards}
+.recipe{margin:0;min-height:1.5em;color:var(--muted);font-size:.9rem;text-align:center}
+
+.result{display:grid;gap:14px;justify-items:start}
+.result .h2{margin:0}
+.result-swatch{width:100%;aspect-ratio:16/9;border-radius:16px;background:repeating-conic-gradient(#EFEAE0 0 25%,#fff 0 50%) 0 0/18px 18px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);transition:background-color .5s}
+.result-swatch.has{background:var(--c)}
+.res-name{margin:0;font-family:"Fraunces",Georgia,serif;font-size:1.6rem;line-height:1.15}
+.res-hex{margin:0;display:flex;gap:10px;align-items:center;font-variant-numeric:tabular-nums;color:var(--muted)}
+.value-block{width:100%}
+.vscale{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:8px 0 6px}
+.vcell{aspect-ratio:1;border-radius:8px;display:grid;place-items:center;font-size:.72rem;font-weight:600;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07);transition:transform .25s,box-shadow .25s}
+.vcell.on{transform:translateY(-4px) scale(1.08);box-shadow:0 0 0 2px var(--ink)}
+
+/* Challenge */
+.versus{display:flex;gap:clamp(16px,4vw,36px);justify-content:center;margin:20px 0 10px}
+.versus figure{margin:0;display:grid;gap:8px;justify-items:center}
+.versus figcaption{font-size:.85rem;color:var(--muted)}
+.vs-circle{width:clamp(110px,22vw,150px);aspect-ratio:1;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),0 8px 22px rgba(0,0,0,.07);transition:background-color .5s}
+.vs-circle.empty{background:repeating-conic-gradient(#EFEAE0 0 25%,#fff 0 50%) 0 0/16px 16px}
+.meter-bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden}
+.meter-bar span{display:block;height:100%;width:0;border-radius:999px;background:var(--ink);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.sim{margin:8px 0 0;font-weight:600;font-variant-numeric:tabular-nums}
+.coach{margin:6px 0 18px;color:var(--muted);min-height:1.5em}
+.coach.win{color:var(--ink);font-weight:600}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.streak{font-size:.85rem;padding:5px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);font-variant-numeric:tabular-nums}
+.streak.pop{animation:bump .4s ease}
+
+footer{max-width:1240px;margin:0 auto;padding:10px clamp(16px,4vw,40px) 36px;color:var(--muted);font-size:.85rem}
+footer a{color:inherit}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50}
+.confetti i{position:absolute;top:-16px;width:9px;height:14px;border-radius:2px;animation:fall linear forwards}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes bump{50%{transform:scale(1.04)}}
+@keyframes drop{0%{transform:translateY(-70px) rotate(45deg);opacity:0}20%{opacity:1}100%{transform:translateY(115px) rotate(45deg) scale(.5);opacity:0}}
+@keyframes fall{to{transform:translate(var(--dx),110vh) rotate(var(--r))}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+@media (max-width:640px){
+  .top{justify-content:center;text-align:left}
+  .tab{padding:8px 14px}
+  .icon-btn span{display:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+
+<header class="top">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <div>
+      <h1>Rueda cromática</h1>
+      <p class="sub">La rueda de color de papel, ahora para tocar en pantalla.</p>
+    </div>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Secciones">
+    <button class="tab" role="tab" id="tab-rueda" data-view="rueda" aria-controls="view-rueda">Rueda</button>
+    <button class="tab" role="tab" id="tab-mezclador" data-view="mezclador" aria-controls="view-mezclador">Mezclador</button>
+    <button class="tab" role="tab" id="tab-desafio" data-view="desafio" aria-controls="view-desafio">Desafío</button>
+  </div>
+  <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+    <span>Sonido</span>
+  </button>
+</header>
+
+<main id="main">
+
+  <!-- RUEDA -->
+  <section id="view-rueda" class="view" role="tabpanel" aria-labelledby="tab-rueda" tabindex="-1">
+    <div class="wheel-layout">
+      <div class="wheel-stage">
+        <svg id="wheel" viewBox="-274 -274 548 548" role="slider" tabindex="0"
+             aria-label="Rueda cromática. Usá las flechas para girarla."
+             aria-valuemin="0" aria-valuemax="359" aria-valuenow="0" aria-valuetext="Amarillo">
+          <circle class="focus-ring" r="268"/>
+          <g id="segments"></g>
+          <circle class="dial-base" r="86"/>
+          <g id="dial"></g>
+          <circle id="keyDot" r="24"/>
+        </svg>
+
+        <div class="key-info" aria-live="polite">
+          <span class="eyebrow">Color clave</span>
+          <span class="key-name" id="keyName">—</span>
+          <span class="key-hex" id="keyHex">—</span>
+        </div>
+
+        <div class="wheel-controls">
+          <button class="round" id="prevBtn" type="button" aria-label="Girar hacia la izquierda">←</button>
+          <button class="primary" id="surprise" type="button">✦ Sorprendeme</button>
+          <button class="round" id="nextBtn" type="button" aria-label="Girar hacia la derecha">→</button>
+        </div>
+
+        <label class="switch">
+          <input type="checkbox" id="libre">
+          <span class="track" aria-hidden="true"></span>
+          Giro libre, sin trabas
+        </label>
+        <p class="hint">Arrastrá la rueda para girarla o tocá un color.</p>
+      </div>
+
+      <div class="panel">
+        <section class="card" aria-labelledby="h-harmony">
+          <h2 class="h2" id="h-harmony">Armonía</h2>
+          <fieldset class="chips" id="harmonies">
+            <legend class="sr-only">Elegí una armonía</legend>
+          </fieldset>
+          <p class="desc" id="harmonyDesc"></p>
+        </section>
+
+        <section class="card" aria-labelledby="h-palette">
+          <div class="row-between">
+            <h2 class="h2" id="h-palette">Tu paleta</h2>
+            <div class="export">
+              <button class="ghost" id="copyHex" type="button">Copiar HEX</button>
+              <button class="ghost" id="copyCss" type="button">Copiar CSS</button>
+            </div>
+          </div>
+          <fieldset class="segmented" id="variants">
+            <legend>Variante</legend>
+          </fieldset>
+          <p class="small muted" id="variantHint"></p>
+          <ul class="swatches" id="swatches"></ul>
+          <p class="small muted" style="margin:0">Tocá un color para copiar su código.</p>
+        </section>
+
+        <section class="card" aria-labelledby="h-mock">
+          <h2 class="h2" id="h-mock">Probala en una interfaz</h2>
+          <div class="mock" id="mock" aria-hidden="true">
+            <span class="mock-tag">Nuevo</span>
+            <h3>Taller de color</h3>
+            <p>Así se ve tu paleta aplicada a una pieza real: fondo, títulos, acentos y botón.</p>
+            <div class="mock-dots" id="mockDots"></div>
+            <span class="mock-btn">Quiero sumarme</span>
+          </div>
+          <div class="contrast" id="contrastInfo"></div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- MEZCLADOR -->
+  <section id="view-mezclador" class="view" role="tabpanel" aria-labelledby="tab-mezclador" tabindex="-1" hidden>
+    <div class="two-col">
+      <div class="card">
+        <h2 class="h2">Mezclá como con pintura</h2>
+        <p class="desc" style="margin-top:0">Tocá un pomo para sumar una gota. Como en la paleta real, mezclar colores los oscurece y los apaga: el blanco aclara y el negro oscurece.</p>
+        <div class="mixer" id="mixer1"></div>
+      </div>
+      <div class="card result">
+        <h2 class="h2">Resultado</h2>
+        <div class="result-swatch" id="resSwatch"></div>
+        <p class="res-name" id="resName" aria-live="polite">Todavía no hay mezcla</p>
+        <p class="res-hex"><span id="resHex">—</span> <button class="ghost" id="resCopy" type="button" disabled>Copiar</button></p>
+        <div class="value-block">
+          <span class="eyebrow">Escala de valor</span>
+          <div class="vscale" id="vscale" aria-hidden="true"></div>
+          <p class="small muted" id="vText" style="margin:0">1 es negro y 10 es blanco.</p>
+        </div>
+        <button class="primary" id="toWheel" type="button" disabled>Ver en la rueda →</button>
+        <p class="small muted" id="toWheelNote" style="margin:0"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- DESAFÍO -->
+  <section id="view-desafio" class="view" role="tabpanel" aria-labelledby="tab-desafio" tabindex="-1" hidden>
+    <div class="two-col">
+      <div class="card">
+        <div class="row-between">
+          <h2 class="h2">Adiviná la mezcla</h2>
+          <span class="streak" id="streak">Racha: 0</span>
+        </div>
+        <p class="desc" style="margin-top:0">Combiná las pinturas hasta igualar el color objetivo. Lo que importa es la proporción: 2 + 2 da lo mismo que 1 + 1.</p>
+        <div class="versus">
+          <figure><div class="vs-circle" id="target"></div><figcaption>Objetivo</figcaption></figure>
+          <figure><div class="vs-circle empty" id="mine"></div><figcaption>Tu mezcla</figcaption></figure>
+        </div>
+        <div class="meter-bar" aria-hidden="true"><span id="meterFill"></span></div>
+        <p class="sim" id="simText">Parecido: 0%</p>
+        <p class="coach" id="coach" aria-live="polite">Empezá sumando una gota.</p>
+        <div class="actions">
+          <button class="ghost" id="hintBtn" type="button">Pista</button>
+          <button class="ghost" id="giveUp" type="button">Me rindo</button>
+          <button class="primary" id="nextTarget" type="button">Nuevo color</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2 class="h2">Tu paleta de pinturas</h2>
+        <div class="mixer" id="mixer2"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Hecho por <a href="https://mapabianchi.online">Mapa Bianchi</a> · Inspirada en la rueda cromática de papel.</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- Datos ---------- */
+const ANCHORS = ['#F7D417','#F7AE1A','#F2832A','#EC5A2C','#E1302F','#BE2C6C','#7D3F9E','#4C41A6','#2D5CC5','#16999A','#36A649','#A3C43A'];
+const NAMES = ['Amarillo','Amarillo-naranja','Naranja','Rojo-naranja','Rojo','Rojo-violeta','Violeta','Azul-violeta','Azul','Azul-verde','Verde','Amarillo-verde'];
+
+const HARMONIES = {
+  complementarios: { label:'Complementarios', offsets:[0,6], desc:'Dos colores opuestos en la rueda. Es el contraste máximo: uno hace brillar al otro. Funciona mejor con uno de protagonista y el otro para acentos.' },
+  analogos: { label:'Análogos', offsets:[-1,0,1], desc:'Tres vecinos en la rueda. Combinan sin esfuerzo y transmiten calma. Elegí uno dominante y dejá los otros de apoyo.' },
+  triada: { label:'Tríada', offsets:[0,4,8], desc:'Tres colores a la misma distancia, formando un triángulo. Equilibrada y vibrante: conviene que uno mande y los otros acompañen.' },
+  dividido: { label:'Complementario dividido', offsets:[0,5,7], desc:'Un color y los dos vecinos de su opuesto. Tiene la fuerza del complementario, pero con menos tensión.' },
+  tetrada: { label:'Tétrada', offsets:[0,2,6,8], desc:'Dos pares de complementarios que forman un rectángulo. Es una paleta muy rica: funciona si un color domina.' },
+  cuadrado: { label:'Cuadrado', offsets:[0,3,6,9], desc:'Cuatro colores a la misma distancia. Mucha variedad; si se siente intensa, usá tintes o tonos para calmarla.' },
+  mono: { label:'Monocromático', offsets:[0], desc:'Un solo color con sus tintes, tonos y sombras. Elegante, sereno y fácil de controlar.' }
+};
+
+const VARIANTS = {
+  puro:   { label:'Puro',   hint:'El color tal cual sale del pomo.' },
+  tinte:  { label:'Tinte',  hint:'Tinte = color + blanco. Más claro y suave.' },
+  tono:   { label:'Tono',   hint:'Tono = color + gris. Más apagado y sereno.' },
+  sombra: { label:'Sombra', hint:'Sombra = color + negro. Más profundo.' }
+};
+
+const PAINTS = [
+  { id:'rojo',     name:'Rojo',     hex:'#E1302F' },
+  { id:'amarillo', name:'Amarillo', hex:'#F7D417' },
+  { id:'azul',     name:'Azul',     hex:'#2D5CC5' },
+  { id:'blanco',   name:'Blanco',   hex:'#FFFFFF' },
+  { id:'negro',    name:'Negro',    hex:'#1B1A19' }
+];
+
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+};
+
+const state = { angle:120, harmony:'complementarios', variant:'puro', libre:false, sound:store.get('rc-sound', true) };
+const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const mod = (n, m) => ((n % m) + m) % m;
+
+/* ---------- Color ---------- */
+const hexToRgb = h => { h = h.replace('#',''); return [0,2,4].map(i => parseInt(h.slice(i,i+2),16)/255); };
+const rgbToHex = c => '#' + c.map(v => Math.round(Math.min(1, Math.max(0, v))*255).toString(16).padStart(2,'0')).join('').toUpperCase();
+const toLin = v => v <= 0.04045 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+const toSrgb = v => v <= 0.0031308 ? 12.92*v : 1.055*Math.pow(v, 1/2.4) - 0.055;
+function linToOklab([r,g,b]){
+  const l = Math.cbrt(0.4122214708*r + 0.5363325363*g + 0.0514459929*b);
+  const m = Math.cbrt(0.2119034982*r + 0.6806995451*g + 0.1073969566*b);
+  const s = Math.cbrt(0.0883024619*r + 0.2817188376*g + 0.6299787005*b);
+  return [0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
+          1.9779984951*l - 2.4285922050*m + 0.4505937099*s,
+          0.0259040371*l + 0.7827717662*m - 0.8086757660*s];
+}
+function oklabToLin([L,a,b]){
+  const l = (L + 0.3963377774*a + 0.2158037573*b) ** 3;
+  const m = (L - 0.1055613458*a - 0.0638541728*b) ** 3;
+  const s = (L - 0.0894841775*a - 1.2914855480*b) ** 3;
+  return [ 4.0767416621*l - 3.3077115913*m + 0.2309699292*s,
+          -1.2684380046*l + 2.6097574011*m - 0.3413193965*s,
+          -0.0041960863*l - 0.7034186147*m + 1.7076147010*s];
+}
+const hexToLab = h => linToOklab(hexToRgb(h).map(toLin));
+const labToHex = lab => rgbToHex(oklabToLin(lab).map(v => toSrgb(Math.max(0, v))));
+function mixHex(a, b, t){
+  const A = hexToLab(a), B = hexToLab(b);
+  return labToHex(A.map((v,i) => v + (B[i]-v)*t));
+}
+function hueAt(deg){
+  const f = mod(deg, 360) / 30;
+  const i = Math.floor(f) % 12, t = f - Math.floor(f);
+  if (t < 1e-6) return ANCHORS[i];
+  return mixHex(ANCHORS[i], ANCHORS[(i+1)%12], t);
+}
+const nameAt = deg => NAMES[Math.round(mod(deg,360)/30) % 12];
+function variantHex(hex, v){
+  if (v === 'tinte') return mixHex(hex, '#FFFFFF', .45);
+  if (v === 'tono') return mixHex(hex, '#8A8A8A', .45);
+  if (v === 'sombra') return mixHex(hex, '#000000', .42);
+  return hex;
+}
+const relLum = hex => { const [r,g,b] = hexToRgb(hex).map(toLin); return 0.2126*r + 0.7152*g + 0.0722*b; };
+const contrast = (a, b) => { const x = relLum(a), y = relLum(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); };
+const textOn = hex => contrast(hex, '#FFFFFF') >= contrast(hex, '#1F1D1A') ? '#FFFFFF' : '#1F1D1A';
+
+function nearestHueAngle(hex){
+  const [, a, b] = hexToLab(hex);
+  if (Math.hypot(a, b) < 0.035) return null;
+  const h = Math.atan2(b, a);
+  let best = 0, bestD = Infinity;
+  for (let d = 0; d < 360; d += 5){
+    const [, a2, b2] = hexToLab(hueAt(d));
+    let diff = Math.abs(Math.atan2(b2, a2) - h);
+    if (diff > Math.PI) diff = 2*Math.PI - diff;
+    if (diff < bestD){ bestD = diff; best = d; }
+  }
+  return best;
+}
+function describe(hex){
+  const [L, a, b] = hexToLab(hex);
+  const C = Math.hypot(a, b);
+  if (C < 0.035) return L > 0.95 ? 'Blanco' : L > 0.72 ? 'Gris claro' : L > 0.45 ? 'Gris' : L > 0.25 ? 'Gris oscuro' : 'Casi negro';
+  const deg = nearestHueAngle(hex);
+  const idx = Math.round(deg/30) % 12;
+  const pure = hexToLab(ANCHORS[idx]);
+  if ([1,2,3].includes(idx) && L < pure[0] - 0.12) return C < 0.08 ? 'Marrón apagado' : 'Marrón';
+  let n = NAMES[idx];
+  if (L > pure[0] + 0.08) n += ' claro';
+  else if (L < pure[0] - 0.08) n += ' oscuro';
+  if (C < Math.hypot(pure[1], pure[2]) * 0.5) n += ' apagado';
+  return n;
+}
+
+/* ---------- Sonido ---------- */
+let actx = null;
+function audio(){ if (!actx){ try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ actx = null; } } return actx; }
+function tone(f1, f2, dur, vol = .08, type = 'sine'){
+  if (!state.sound) return;
+  const a = audio(); if (!a) return;
+  try {
+    if (a.state === 'suspended') a.resume();
+    const t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f1, t);
+    o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(a.destination);
+    o.start(t); o.stop(t + dur + 0.03);
+  } catch(e){}
+}
+const plop = () => tone(720 + Math.random()*120, 170, .15, .13);
+const tick = () => tone(1900, 1300, .03, .025, 'triangle');
+const chime = () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, f*1.001, .3, .07), i*90));
+const whoosh = () => tone(300, 900, .35, .04, 'sine');
+
+/* ---------- Utilidades UI ---------- */
+let toastTimer;
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+async function copy(text, msg){
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch(e){}
+  if (!ok){
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly',''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { ok = document.execCommand('copy'); } catch(e){}
+    ta.remove();
+  }
+  toast(ok ? msg : 'No se pudo copiar: ' + text);
+}
+function confetti(colors){
+  if (reduced) return;
+  const box = document.createElement('div');
+  box.className = 'confetti';
+  for (let i = 0; i < 70; i++){
+    const s = document.createElement('i');
+    s.style.left = Math.random()*100 + '%';
+    s.style.background = colors[i % colors.length];
+    s.style.animationDelay = (Math.random()*.35) + 's';
+    s.style.animationDuration = (1.3 + Math.random()*1.3) + 's';
+    s.style.setProperty('--dx', (Math.random()*220 - 110) + 'px');
+    s.style.setProperty('--r', (Math.random()*900 - 450) + 'deg');
+    box.appendChild(s);
+  }
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 3000);
+}
+
+/* ---------- Rueda (SVG) ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+const svgEl = (tag, attrs = {}, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; };
+const pt = (r, a) => { const rad = a*Math.PI/180; return [ +(r*Math.sin(rad)).toFixed(2), +(-r*Math.cos(rad)).toFixed(2) ]; };
+function arc(r1, r2, a1, a2){
+  const [x1,y1] = pt(r2,a1), [x2,y2] = pt(r2,a2), [x3,y3] = pt(r1,a2), [x4,y4] = pt(r1,a1);
+  return `M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z`;
+}
+const RINGS = [['puro',206,254],['tinte',166,202],['tono',128,162],['sombra',92,124]];
+const wheel = $('#wheel'), segLayer = $('#segments'), dial = $('#dial'), keyDot = $('#keyDot');
+const segPaths = [];
+for (let i = 0; i < 12; i++){
+  const g = svgEl('g', { class:'seg', 'data-i':i }, segLayer);
+  const rings = {};
+  RINGS.forEach(([k, r1, r2]) => {
+    rings[k] = svgEl('path', { d:arc(r1, r2, i*30-15, i*30+15), fill:variantHex(ANCHORS[i], k) }, g);
+  });
+  segPaths.push(rings);
+}
+
+function buildDial(){
+  dial.innerHTML = '';
+  const offs = HARMONIES[state.harmony].offsets;
+  if (offs.length >= 2){
+    const pts = offs.slice().sort((a,b) => a-b).map(o => pt(66, o*30).join(',')).join(' ');
+    svgEl('polygon', { points:pts, class:'shape' }, dial);
+  } else {
+    svgEl('circle', { r:62, class:'shape ring' }, dial);
+  }
+  offs.forEach(o => {
+    const [x1,y1] = pt(88, o*30), [x2,y2] = pt(212, o*30);
+    svgEl('line', { x1, y1, x2, y2, class:'spoke' }, dial);
+  });
+  offs.forEach(o => {
+    const [cx, cy] = pt(230, o*30), r = o === 0 ? 17 : 13;
+    svgEl('circle', { cx, cy, r, class:'marker' }, dial);
+    svgEl('circle', { cx, cy, r, class:'marker-in' }, dial);
+  });
+  svgEl('path', { d:'M-10 -273L10 -273L0 -257Z', class:'pointer' }, dial);
+}
+
+function getPalette(){
+  const key = mod(state.angle, 360);
+  const n = nameAt(key);
+  if (state.harmony === 'mono'){
+    const b = hueAt(key);
+    return [
+      { hex:mixHex(b,'#FFFFFF',.7),  name:n + ' · tinte claro' },
+      { hex:mixHex(b,'#FFFFFF',.4),  name:n + ' · tinte' },
+      { hex:b, name:n, isKey:true },
+      { hex:mixHex(b,'#8A8A8A',.45), name:n + ' · tono' },
+      { hex:mixHex(b,'#000000',.45), name:n + ' · sombra' }
+    ];
+  }
+  return HARMONIES[state.harmony].offsets.map(o => {
+    const d = key + o*30;
+    const suffix = state.variant !== 'puro' ? ' · ' + VARIANTS[state.variant].label.toLowerCase() : '';
+    return { hex:variantHex(hueAt(d), state.variant), name:nameAt(d) + suffix, isKey:o === 0 };
+  });
+}
+
+let currentPalette = [];
+function render(){
+  const key = mod(state.angle, 360);
+  const h = HARMONIES[state.harmony];
+  const selected = new Set(h.offsets.map(o => mod(Math.round((key + o*30)/30), 12)));
+  segPaths.forEach((rings, i) => {
+    for (const k in rings){
+      let op = 0.26;
+      if (selected.has(i)) op = (state.harmony === 'mono' || k === state.variant) ? 1 : 0.55;
+      rings[k].style.opacity = op;
+    }
+  });
+  dial.style.transform = `rotate(${state.angle}deg)`;
+  const keyHex = hueAt(key);
+  keyDot.setAttribute('fill', keyHex);
+  wheel.setAttribute('aria-valuenow', Math.round(key));
+  wheel.setAttribute('aria-valuetext', nameAt(key));
+  $('#keyName').textContent = nameAt(key);
+  $('#keyHex').textContent = keyHex;
+
+  currentPalette = getPalette();
+  renderSwatches(currentPalette);
+  renderMock(currentPalette);
+}
+
+function renderSwatches(pal){
+  const ul = $('#swatches');
+  ul.innerHTML = '';
+  pal.forEach(c => {
+    const li = document.createElement('li');
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'swatch';
+    b.style.background = c.hex;
+    b.style.color = textOn(c.hex);
+    b.setAttribute('aria-label', `${c.name}, ${c.hex}${c.isKey ? ', color clave' : ''}. Copiar código`);
+    b.innerHTML = (c.isKey ? '<span class="badge">Clave</span>' : '') +
+      `<span class="sw-name">${c.name}</span><span class="sw-hex">${c.hex}</span>`;
+    b.addEventListener('click', () => { plop(); copy(c.hex, `Copiado ${c.hex}`); });
+    li.appendChild(b);
+    ul.appendChild(li);
+  });
+}
+
+function grade(r){ return r >= 7 ? 'AAA' : r >= 4.5 ? 'AA' : r >= 3 ? 'AA grande' : 'No pasa'; }
+function renderMock(pal){
+  const key = pal.find(c => c.isKey) || pal[0];
+  const others = pal.filter(c => c !== key);
+  const bg = mixHex(key.hex, '#FFFFFF', .86);
+  const head = mixHex(key.hex, '#111111', .62);
+  const body = mixHex(key.hex, '#3A3A3A', .78);
+  const btn = state.harmony === 'mono' ? pal[4].hex : (others[0] || key).hex;
+  const tag = state.harmony === 'mono' ? pal[1].hex : (others[1] || key).hex;
+  const m = $('#mock');
+  const btnInk = textOn(btn);
+  m.style.setProperty('--m-bg', bg);
+  m.style.setProperty('--m-head', head);
+  m.style.setProperty('--m-body', body);
+  m.style.setProperty('--m-btn', btn);
+  m.style.setProperty('--m-btn-ink', btnInk);
+  m.style.setProperty('--m-tag', tag);
+  m.style.setProperty('--m-tag-ink', textOn(tag));
+  $('#mockDots').innerHTML = pal.map(c => `<i style="background:${c.hex}"></i>`).join('');
+  const r1 = contrast(btn, btnInk), r2 = contrast(head, bg);
+  const pill = (label, r) => `<span class="pill ${r >= 4.5 ? 'ok' : r < 3 ? 'bad' : ''}">${label}: ${r.toFixed(1)}:1 <b>${grade(r)}</b></span>`;
+  $('#contrastInfo').innerHTML = pill('Contraste del botón', r1) + pill('Contraste del título', r2);
+}
+
+/* Interacción con la rueda */
+function pointerAngle(e){
+  const r = wheel.getBoundingClientRect();
+  const x = e.clientX - (r.left + r.width/2), y = e.clientY - (r.top + r.height/2);
+  return Math.atan2(x, -y) * 180 / Math.PI;
+}
+const keyIndex = () => Math.round(mod(state.angle,360)/30) % 12;
+let drag = null;
+wheel.addEventListener('pointerdown', e => {
+  if (e.button !== undefined && e.button !== 0) return;
+  drag = { last:pointerAngle(e), x:e.clientX, y:e.clientY, moved:false, target:e.target, idx:keyIndex() };
+  try { wheel.setPointerCapture(e.pointerId); } catch(_){}
+});
+wheel.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;
+  drag.moved = true;
+  wheel.classList.add('dragging');
+  const a = pointerAngle(e);
+  state.angle += mod(a - drag.last + 180, 360) - 180;
+  drag.last = a;
+  const idx = keyIndex();
+  if (idx !== drag.idx){ drag.idx = idx; tick(); }
+  render();
+});
+function endDrag(){
+  if (!drag) return;
+  wheel.classList.remove('dragging');
+  if (drag.moved){
+    if (!state.libre) state.angle = Math.round(state.angle/30)*30;
+    render();
+  } else {
+    const seg = drag.target && drag.target.closest ? drag.target.closest('.seg') : null;
+    if (seg){ goTo(+seg.dataset.i * 30); tick(); }
+  }
+  drag = null;
+}
+wheel.addEventListener('pointerup', endDrag);
+wheel.addEventListener('pointercancel', endDrag);
+
+function goTo(deg){
+  state.angle += mod(deg - state.angle + 180, 360) - 180;
+  render();
+}
+function step(dir){
+  const s = state.libre ? 5 : 30;
+  const base = state.libre ? state.angle : Math.round(state.angle/30)*30;
+  state.angle = base + dir*s;
+  tick(); render();
+}
+wheel.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowUp'){ e.preventDefault(); step(1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown'){ e.preventDefault(); step(-1); }
+  else if (e.key === 'Home'){ e.preventDefault(); goTo(0); }
+});
+$('#prevBtn').addEventListener('click', () => step(-1));
+$('#nextBtn').addEventListener('click', () => step(1));
+$('#libre').addEventListener('change', e => {
+  state.libre = e.target.checked;
+  if (!state.libre){ state.angle = Math.round(state.angle/30)*30; render(); }
+});
+
+$('#surprise').addEventListener('click', () => {
+  const keys = Object.keys(HARMONIES).filter(k => k !== state.harmony);
+  setHarmony(keys[Math.floor(Math.random()*keys.length)], false);
+  dial.classList.add('spin');
+  const extra = state.libre ? Math.random()*360 : Math.floor(Math.random()*12)*30;
+  state.angle = Math.round(state.angle/30)*30 + 720 + extra;
+  whoosh();
+  render();
+  setTimeout(() => { dial.classList.remove('spin'); tick(); }, reduced ? 0 : 1500);
+});
+
+/* Armonías y variantes */
+const SHAPE_ICONS = {
+  complementarios:'<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="2.5" r="1.8" fill="currentColor"/><circle cx="8" cy="13.5" r="1.8" fill="currentColor"/><path d="M8 4v8" stroke="currentColor" stroke-width="1.2"/></svg>',
+  analogos:'<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="4" r="1.8" fill="currentColor"/><circle cx="8" cy="2.3" r="1.8" fill="currentColor"/><circle cx="12.5" cy="4" r="1.8" fill="currentColor"/></svg>',
+  triada:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2L14 13H2Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+  dividido:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2L11.5 14H4.5Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+  tetrada:'<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="2" width="8" height="12" fill="none" stroke="currentColor" stroke-width="1.4" transform="rotate(30 8 8)"/></svg>',
+  cuadrado:'<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.4" transform="rotate(45 8 8)"/></svg>',
+  mono:'<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2.2" fill="currentColor"/></svg>'
+};
+const hf = $('#harmonies');
+Object.entries(HARMONIES).forEach(([k, h]) => {
+  const l = document.createElement('label');
+  l.className = 'chip';
+  l.innerHTML = `<input type="radio" name="harmony" value="${k}"${k === state.harmony ? ' checked' : ''}><span>${SHAPE_ICONS[k]}${h.label}</span>`;
+  hf.appendChild(l);
+});
+hf.addEventListener('change', e => { if (e.target.name === 'harmony'){ setHarmony(e.target.value, true); } });
+function setHarmony(k, sound){
+  state.harmony = k;
+  const input = hf.querySelector(`input[value="${k}"]`);
+  if (input) input.checked = true;
+  $('#harmonyDesc').textContent = HARMONIES[k].desc;
+  $('#variants').disabled = k === 'mono';
+  updateVariantHint();
+  buildDial();
+  if (sound) plop();
+  render();
+}
+const vf = $('#variants');
+Object.entries(VARIANTS).forEach(([k, v]) => {
+  const l = document.createElement('label');
+  l.innerHTML = `<input type="radio" name="variant" value="${k}"${k === state.variant ? ' checked' : ''}><span>${v.label}</span>`;
+  vf.appendChild(l);
+});
+vf.addEventListener('change', e => {
+  if (e.target.name === 'variant'){ state.variant = e.target.value; updateVariantHint(); tick(); render(); }
+});
+function updateVariantHint(){
+  $('#variantHint').textContent = state.harmony === 'mono'
+    ? 'En monocromático ves todas las variantes juntas: tintes, tono y sombra.'
+    : VARIANTS[state.variant].hint;
+}
+
+$('#copyHex').addEventListener('click', () => copy(currentPalette.map(c => c.hex).join(', '), 'Copiaste los códigos HEX'));
+$('#copyCss').addEventListener('click', () => {
+  const css = ':root {\n' + currentPalette.map((c, i) => `  --color-${i+1}: ${c.hex}; /* ${c.name} */`).join('\n') + '\n}';
+  copy(css, 'Copiaste las variables CSS');
+});
+
+/* ---------- Mezclador ---------- */
+function mixDrops(counts){
+  const total = PAINTS.reduce((s, p) => s + (counts[p.id] || 0), 0);
+  if (!total) return null;
+  const acc = [0,0,0];
+  PAINTS.forEach(p => {
+    const n = counts[p.id] || 0;
+    if (!n) return;
+    const w = n / total;
+    hexToRgb(p.hex).map(toLin).forEach((v, k) => { acc[k] += w * Math.log(Math.max(v, 0.002)); });
+  });
+  return rgbToHex(acc.map(v => toSrgb(Math.exp(v))));
+}
+function recipeText(counts){
+  return PAINTS.filter(p => counts[p.id] > 0)
+    .map(p => `${counts[p.id]} ${counts[p.id] === 1 ? 'gota' : 'gotas'} de ${p.name.toLowerCase()}`)
+    .join(' + ');
+}
+
+class Mixer {
+  constructor(root, onChange){
+    this.root = root;
+    this.onChange = onChange || (() => {});
+    this.counts = Object.fromEntries(PAINTS.map(p => [p.id, 0]));
+    root.innerHTML =
+      `<div class="tubes" role="group" aria-label="Pinturas">` +
+      PAINTS.map(p => `<div class="tube">
+          <button type="button" class="paint" data-add="${p.id}" aria-label="Agregar una gota de ${p.name.toLowerCase()}"><span class="blob" style="--c:${p.hex}"></span><span>${p.name}</span></button>
+          <div class="stepper"><button type="button" class="mini" data-sub="${p.id}" aria-label="Quitar una gota de ${p.name.toLowerCase()}">−</button><span class="count" data-count="${p.id}" aria-hidden="true">0</span></div>
+        </div>`).join('') +
+      `</div>
+      <div class="bowl-wrap"><div class="bowl"><div class="fill"></div><div class="swirl"></div><span class="bowl-empty">Sumá gotas<br>de pintura</span></div></div>
+      <p class="recipe"></p>
+      <button type="button" class="ghost" data-reset>Vaciar la paleta</button>`;
+    this.bowl = root.querySelector('.bowl');
+    this.fill = root.querySelector('.fill');
+    this.recipe = root.querySelector('.recipe');
+    root.addEventListener('click', e => {
+      const a = e.target.closest('[data-add]'); if (a) return this.add(a.dataset.add);
+      const s = e.target.closest('[data-sub]'); if (s) return this.sub(s.dataset.sub);
+      if (e.target.closest('[data-reset]')) this.reset(true);
+    });
+    this.update();
+  }
+  add(id){
+    if (this.counts[id] >= 30) return;
+    this.counts[id]++;
+    this.drop(PAINTS.find(p => p.id === id).hex);
+    plop();
+    this.update();
+  }
+  sub(id){ if (this.counts[id] > 0){ this.counts[id]--; tick(); this.update(); } }
+  reset(sound){ for (const k in this.counts) this.counts[k] = 0; if (sound) whoosh(); this.update(); }
+  drop(hex){
+    if (reduced) return;
+    const d = document.createElement('span');
+    d.className = 'drop';
+    d.style.setProperty('--c', hex);
+    this.root.querySelector('.bowl-wrap').appendChild(d);
+    d.addEventListener('animationend', () => d.remove());
+    this.bowl.classList.remove('bump'); void this.bowl.offsetWidth; this.bowl.classList.add('bump');
+  }
+  get hex(){ return mixDrops(this.counts); }
+  update(){
+    const hex = this.hex;
+    this.bowl.classList.toggle('has', !!hex);
+    if (hex) this.fill.style.backgroundColor = hex;
+    PAINTS.forEach(p => {
+      this.root.querySelector(`[data-count="${p.id}"]`).textContent = this.counts[p.id];
+      this.root.querySelector(`[data-sub="${p.id}"]`).disabled = this.counts[p.id] === 0;
+    });
+    this.recipe.textContent = recipeText(this.counts);
+    this.onChange(hex, this);
+  }
+}
+
+/* Resultado del mezclador */
+const vscale = $('#vscale');
+for (let i = 0; i < 10; i++){
+  const g = labToHex([i/9, 0, 0]);
+  const c = document.createElement('div');
+  c.className = 'vcell';
+  c.style.background = g;
+  c.style.color = textOn(g);
+  c.textContent = i + 1;
+  vscale.appendChild(c);
+}
+let mixHexNow = null;
+const mixer1 = new Mixer($('#mixer1'), hex => {
+  mixHexNow = hex;
+  const sw = $('#resSwatch');
+  sw.classList.toggle('has', !!hex);
+  if (hex) sw.style.setProperty('--c', hex);
+  $('#resName').textContent = hex ? describe(hex) : 'Todavía no hay mezcla';
+  $('#resHex').textContent = hex || '—';
+  $('#resCopy').disabled = !hex;
+  const cells = vscale.children;
+  [...cells].forEach(c => c.classList.remove('on'));
+  if (hex){
+    const v = Math.min(10, Math.max(1, Math.round(hexToLab(hex)[0]*9) + 1));
+    cells[v-1].classList.add('on');
+    $('#vText').textContent = `Valor ${v} de 10. El 1 es negro y el 10 es blanco.`;
+    const deg = nearestHueAngle(hex);
+    $('#toWheel').disabled = deg === null;
+    $('#toWheelNote').textContent = deg === null ? 'Los grises no tienen lugar en la rueda: no tienen tono.' : `Su tono más cercano en la rueda es ${nameAt(deg).toLowerCase()}.`;
+  } else {
+    $('#vText').textContent = '1 es negro y 10 es blanco.';
+    $('#toWheel').disabled = true;
+    $('#toWheelNote').textContent = '';
+  }
+});
+$('#resCopy').addEventListener('click', () => mixHexNow && copy(mixHexNow, `Copiado ${mixHexNow}`));
+$('#toWheel').addEventListener('click', () => {
+  const deg = mixHexNow && nearestHueAngle(mixHexNow);
+  if (deg === null || deg === undefined) return;
+  showView('rueda');
+  goTo(state.libre ? deg : Math.round(deg/30)*30);
+  toast(`Girando hasta ${nameAt(deg).toLowerCase()}`);
+});
+
+/* ---------- Desafío ---------- */
+const ch = { target:null, recipe:null, done:false, streak:store.get('rc-streak', 0) };
+const rnd = n => Math.floor(Math.random()*n);
+function updateStreak(pop){
+  const s = $('#streak');
+  s.textContent = `Racha: ${ch.streak}`;
+  if (pop){ s.classList.remove('pop'); void s.offsetWidth; s.classList.add('pop'); }
+  store.set('rc-streak', ch.streak);
+}
+function newTarget(){
+  let recipe, hex;
+  do {
+    const chrom = ['rojo','amarillo','azul'].sort(() => Math.random() - .5).slice(0, Math.random() < .55 ? 2 : 1);
+    recipe = {};
+    chrom.forEach(id => recipe[id] = 1 + rnd(3));
+    const r = Math.random();
+    if (chrom.length === 1 || r < .35) recipe.blanco = 1 + rnd(2);
+    else if (r < .5) recipe.negro = 1;
+    hex = mixDrops(recipe);
+  } while (ch.target && hex === ch.target);
+  ch.recipe = recipe; ch.target = hex; ch.done = false;
+  $('#target').style.backgroundColor = hex;
+  $('#coach').classList.remove('win');
+  mixer2.reset(false);
+  $('#coach').textContent = 'Empezá sumando una gota.';
+}
+function coachMsg(A, B, sim){
+  if (sim >= 90) return '¡Muy cerca! Ajustá de a una gota.';
+  const dL = A[0] - B[0], cA = Math.hypot(A[1], A[2]), cB = Math.hypot(B[1], B[2]);
+  if (Math.abs(dL) > .07) return dL > 0 ? 'Tu mezcla está más clara que el objetivo.' : 'Tu mezcla está más oscura que el objetivo.';
+  if (cA - cB > .04) return 'Tu mezcla está más intensa que el objetivo.';
+  if (cB - cA > .04) return 'A tu mezcla le falta intensidad.';
+  return 'La luz va bien: revisá el tono, quizás falta o sobra algún color.';
+}
+const mixer2 = new Mixer($('#mixer2'), hex => {
+  if (!ch.target) return;
+  const mine = $('#mine');
+  mine.classList.toggle('empty', !hex);
+  mine.style.backgroundColor = hex || '';
+  let sim = 0;
+  if (hex){
+    const A = hexToLab(hex), B = hexToLab(ch.target);
+    sim = Math.max(0, Math.min(100, Math.round(100 - Math.hypot(A[0]-B[0], A[1]-B[1], A[2]-B[2]) * 280)));
+    if (!ch.done){
+      if (sim >= 97){
+        ch.done = true; ch.streak++; updateStreak(true);
+        const c = $('#coach');
+        c.textContent = '¡Clavado! Lograste el color exacto.';
+        c.classList.add('win');
+        chime();
+        confetti([ch.target, ...ANCHORS]);
+        $('#nextTarget').focus();
+      } else {
+        $('#coach').textContent = coachMsg(A, B, sim);
+      }
+    }
+  } else if (!ch.done){
+    $('#coach').textContent = 'Empezá sumando una gota.';
+  }
+  $('#meterFill').style.width = sim + '%';
+  $('#simText').textContent = `Parecido: ${sim}%`;
+});
+$('#hintBtn').addEventListener('click', () => {
+  if (ch.done) return;
+  const names = PAINTS.filter(p => ch.recipe[p.id]).map(p => p.name.toLowerCase());
+  const list = names.length > 1 ? names.slice(0, -1).join(', ') + ' y ' + names[names.length-1] : names[0];
+  $('#coach').textContent = `Pista: lleva ${list}.`;
+  tick();
+});
+$('#giveUp').addEventListener('click', () => {
+  if (ch.done) return;
+  ch.done = true; ch.streak = 0; updateStreak(false);
+  $('#coach').textContent = `La receta era: ${recipeText(ch.recipe)}.`;
+});
+$('#nextTarget').addEventListener('click', () => { whoosh(); newTarget(); });
+
+/* ---------- Pestañas ---------- */
+const tabs = [...document.querySelectorAll('.tab')];
+const VIEWS = tabs.map(t => t.dataset.view);
+function showView(id, focusPanel){
+  if (!VIEWS.includes(id)) id = 'rueda';
+  tabs.forEach(t => {
+    const on = t.dataset.view === id;
+    t.setAttribute('aria-selected', on);
+    t.tabIndex = on ? 0 : -1;
+    document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+  });
+  if (location.hash.slice(1) !== id){ try { history.replaceState(null, '', '#' + id); } catch(e){} }
+  if (focusPanel) document.getElementById('view-' + id).focus({ preventScroll:true });
+}
+tabs.forEach((t, i) => {
+  t.addEventListener('click', () => { showView(t.dataset.view); tick(); });
+  t.addEventListener('keydown', e => {
+    let j = null;
+    if (e.key === 'ArrowRight') j = (i + 1) % tabs.length;
+    if (e.key === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
+    if (j !== null){ e.preventDefault(); tabs[j].focus(); showView(tabs[j].dataset.view); }
+  });
+});
+window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
+
+/* ---------- Sonido on/off ---------- */
+const soundBtn = $('#soundBtn');
+function syncSound(){
+  soundBtn.setAttribute('aria-pressed', state.sound);
+  soundBtn.setAttribute('aria-label', state.sound ? 'Sonido activado' : 'Sonido desactivado');
+}
+soundBtn.addEventListener('click', () => { state.sound = !state.sound; store.set('rc-sound', state.sound); syncSound(); tick(); });
+
+/* ---------- Inicio ---------- */
+syncSound();
+updateStreak(false);
+setHarmony(state.harmony, false);
+newTarget();
+showView(location.hash.slice(1) || 'rueda');
+})();
+</script>
+</body>
+</html>
