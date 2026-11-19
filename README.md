@@ -10,7 +10,6 @@ La rueda de color de papel, ahora para tocar en pantalla. Una web app interactiv
 - 7 armonías: complementarios, análogos, tríada, complementario dividido, tétrada, cuadrado y monocromático.
 - Variantes de cada paleta: puro, tinte (+ blanco), tono (+ gris) y sombra (+ negro).
 - Copiás cualquier color, la lista de HEX o las variables CSS listas para usar.
-- Vista previa de la paleta aplicada a una interfaz, con el contraste WCAG del botón y del título.
 - Botón “Sorprendeme” para girar la rueda y probar una armonía al azar.
 - Modo de giro libre, sin trabas, para tonos intermedios.
 

@@ -170,20 +170,6 @@ main{max-width:1440px;margin:0 auto;padding:4px clamp(16px,4vw,40px) 40px}
 .badge{margin-bottom:auto;font-size:.64rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.75);color:var(--ink)}
 .export{display:flex;gap:8px;flex-wrap:wrap}
 
-/* Mock */
-.mock{--m-bg:#fff;--m-head:#000;--m-body:#333;--m-btn:#000;--m-btn-ink:#fff;--m-tag:#eee;--m-tag-ink:#000;background:var(--m-bg);border-radius:16px;padding:24px;display:grid;gap:10px;justify-items:start;transition:background .4s}
-.mock-tag{background:var(--m-tag);color:var(--m-tag-ink);font-size:.7rem;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.08em;transition:background .4s,color .4s}
-.mock h3{margin:0;font-size:1.55rem;color:var(--m-head);transition:color .4s}
-.mock p{margin:0;color:var(--m-body);font-size:.92rem;max-width:36ch;transition:color .4s}
-.mock-dots{display:flex;gap:6px}
-.mock-dots i{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
-.mock-btn{background:var(--m-btn);color:var(--m-btn-ink);padding:10px 18px;border-radius:999px;font-weight:600;font-size:.9rem;margin-top:4px;transition:background .4s,color .4s}
-.contrast{margin:12px 0 0;display:flex;gap:8px;flex-wrap:wrap}
-.pill{display:inline-flex;gap:6px;align-items:center;font-size:.8rem;padding:5px 10px;border-radius:999px;background:#fff;border:1px solid var(--line)}
-.pill b{font-weight:600}
-.pill.ok b{color:#1F7A3D}
-.pill.bad b{color:#B3261E}
-
 /* Mixer */
 .two-col{display:grid;gap:22px;grid-template-columns:1fr}
 @media (min-width:900px){.two-col{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}}
@@ -360,17 +346,6 @@ footer a{color:inherit}
           <p class="small muted" style="margin:0">Tocá un color para copiar su código.</p>
         </section>
 
-        <section class="card" aria-labelledby="h-mock">
-          <h2 class="h2" id="h-mock">Probala en una interfaz</h2>
-          <div class="mock" id="mock" aria-hidden="true">
-            <span class="mock-tag">Nuevo</span>
-            <h3>Taller de color</h3>
-            <p>Así se ve tu paleta aplicada a una pieza real: fondo, títulos, acentos y botón.</p>
-            <div class="mock-dots" id="mockDots"></div>
-            <span class="mock-btn">Quiero sumarme</span>
-          </div>
-          <div class="contrast" id="contrastInfo"></div>
-        </section>
       </div>
     </div>
   </section>
@@ -866,7 +841,6 @@ function render(){
 
   currentPalette = getPalette();
   renderSwatches(currentPalette);
-  renderMock(currentPalette);
 }
 
 function renderSwatches(pal){
@@ -886,30 +860,6 @@ function renderSwatches(pal){
     li.appendChild(b);
     ul.appendChild(li);
   });
-}
-
-function grade(r){ return r >= 7 ? 'AAA' : r >= 4.5 ? 'AA' : r >= 3 ? 'AA grande' : 'No pasa'; }
-function renderMock(pal){
-  const key = pal.find(c => c.isKey) || pal[0];
-  const others = pal.filter(c => c !== key);
-  const bg = mixHex(key.hex, '#FFFFFF', .86);
-  const head = mixHex(key.hex, '#111111', .62);
-  const body = mixHex(key.hex, '#3A3A3A', .78);
-  const btn = state.harmony === 'mono' ? pal[4].hex : (others[0] || key).hex;
-  const tag = state.harmony === 'mono' ? pal[1].hex : (others[1] || key).hex;
-  const m = $('#mock');
-  const btnInk = textOn(btn);
-  m.style.setProperty('--m-bg', bg);
-  m.style.setProperty('--m-head', head);
-  m.style.setProperty('--m-body', body);
-  m.style.setProperty('--m-btn', btn);
-  m.style.setProperty('--m-btn-ink', btnInk);
-  m.style.setProperty('--m-tag', tag);
-  m.style.setProperty('--m-tag-ink', textOn(tag));
-  $('#mockDots').innerHTML = pal.map(c => `<i style="background:${c.hex}"></i>`).join('');
-  const r1 = contrast(btn, btnInk), r2 = contrast(head, bg);
-  const pill = (label, r) => `<span class="pill ${r >= 4.5 ? 'ok' : r < 3 ? 'bad' : ''}">${label}: ${r.toFixed(1)}:1 <b>${grade(r)}</b></span>`;
-  $('#contrastInfo').innerHTML = pill('Contraste del botón', r1) + pill('Contraste del título', r2);
 }
 
 /* Interacción con la rueda */
