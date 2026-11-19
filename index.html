@@ -225,6 +225,15 @@ main{max-width:1440px;margin:0 auto;padding:4px clamp(16px,4vw,40px) 40px}
 footer{max-width:1440px;margin:0 auto;padding:10px clamp(16px,4vw,40px) 36px;color:var(--muted);font-size:.85rem}
 footer a{color:inherit}
 
+.wheel-tip{position:fixed;z-index:45;display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;border-radius:14px;padding:8px 8px 8px 10px;box-shadow:0 10px 26px rgba(0,0,0,.18);font-size:.88rem;line-height:1.2}
+.wheel-tip[hidden]{display:none}
+.tip-sw{width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 2px #fff;flex:none}
+.tip-txt{display:grid;gap:2px}
+.tip-hex{font-variant-numeric:tabular-nums;letter-spacing:.03em;font-size:.95rem}
+.tip-name{opacity:.75;font-size:.78rem}
+.tip-copy{background:#fff;color:var(--ink);border:0;border-radius:999px;padding:7px 12px;font-size:.82rem;font-weight:600;cursor:pointer}
+.tip-copy:hover{background:var(--bg)}
+#wheel [data-band]{cursor:copy}
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
@@ -318,7 +327,7 @@ footer a{color:inherit}
           <span class="track" aria-hidden="true"></span>
           Giro libre, sin trabas
         </label>
-        <p class="hint">Arrastrá la rueda para girarla o tocá un color.</p>
+        <p class="hint">Arrastrá la rueda para girarla. Tocá una pestaña para elegir el color clave<br>o un color de las ventanas para copiar su código.</p>
       </div>
 
       <div class="panel">
@@ -406,6 +415,11 @@ footer a{color:inherit}
 
 <footer>Hecho por <a href="https://mapabianchi.online">Mapa Bianchi</a> · Inspirada en la rueda cromática de papel.</footer>
 
+<div class="wheel-tip" id="wheelTip" hidden>
+  <span class="tip-sw" aria-hidden="true"></span>
+  <span class="tip-txt"><b class="tip-hex"></b><span class="tip-name"></span></span>
+  <button type="button" class="tip-copy">Copiar</button>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -600,10 +614,11 @@ const DISC_BG = '#FDFCF8';
   const defs = wheel.querySelector('defs');
   for (let i = 0; i < 12; i++){
     const a = i*30, g = svgEl('g', { class:'seg', 'data-i':i }, colorDisc);
-    svgEl('path', { d:arc(168, 204, a-15, a+15), fill:variantHex(ANCHORS[i], 'tinte') }, g);
-    svgEl('path', { d:arc(133, 168, a-15, a+15), fill:variantHex(ANCHORS[i], 'tono') }, g);
-    svgEl('path', { d:arc(96, 133, a-15, a+15), fill:variantHex(ANCHORS[i], 'sombra') }, g);
-    svgEl('path', { d:arc(229, 263, a-13.6, a+13.6), fill:ANCHORS[i], class:'ctab' }, g);
+    [['tinte', 168, 204, 'tinte'], ['tono', 133, 168, 'tono'], ['sombra', 96, 133, 'matiz']].forEach(([v, r1, r2, label]) => {
+      const hex = variantHex(ANCHORS[i], v);
+      svgEl('path', { d:arc(r1, r2, a-15, a+15), fill:hex, 'data-hex':hex, 'data-name':`${NAMES[i]} · ${label}`, 'data-band':'' }, g);
+    });
+    svgEl('path', { d:arc(229, 263, a-13.6, a+13.6), fill:ANCHORS[i], class:'ctab', 'data-hex':ANCHORS[i], 'data-name':`${NAMES[i]} · color puro` }, g);
     const [x1,y1] = pt(242, a-14), [x2,y2] = pt(242, a+14);
     svgEl('path', { id:'tabArc'+i, d:`M${x1} ${y1}A242 242 0 0 1 ${x2} ${y2}`, fill:'none' }, defs);
     const label = NAMES[i].toUpperCase();
@@ -870,7 +885,42 @@ function pointerAngle(e){
 }
 const keyIndex = () => Math.round(mod(state.angle,360)/30) % 12;
 let drag = null;
+/* Tooltip con el código al pasar el mouse */
+const tip = $('#wheelTip');
+let tipTarget = null, tipHex = null, tipHideT = null;
+function hideTip(){ clearTimeout(tipHideT); tip.hidden = true; tipTarget = null; }
+function hideTipSoon(){ clearTimeout(tipHideT); tipHideT = setTimeout(hideTip, 350); }
+function showTip(el, e){
+  clearTimeout(tipHideT);
+  if (el === tipTarget) return;
+  tipTarget = el; tipHex = el.dataset.hex;
+  tip.querySelector('.tip-sw').style.background = tipHex;
+  tip.querySelector('.tip-hex').textContent = tipHex;
+  tip.querySelector('.tip-name').textContent = el.dataset.name;
+  tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = e.clientX + 12, y = e.clientY + 12;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 12;
+  if (y + h > innerHeight - 8) y = e.clientY - h - 12;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+wheel.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse') return;
+  if (drag){ if (drag.moved) hideTip(); return; }
+  const el = e.target.closest ? e.target.closest('[data-hex]') : null;
+  if (el) showTip(el, e); else hideTipSoon();
+});
+wheel.addEventListener('pointerleave', hideTipSoon);
+tip.addEventListener('pointerenter', () => clearTimeout(tipHideT));
+tip.addEventListener('pointerleave', hideTipSoon);
+tip.querySelector('.tip-copy').addEventListener('click', () => {
+  if (!tipHex) return;
+  plop(); copy(tipHex, `Copiado ${tipHex}`);
+});
+window.addEventListener('scroll', hideTip, { passive:true });
+
 wheel.addEventListener('pointerdown', e => {
+  hideTip();
   if (e.button !== undefined && e.button !== 0) return;
   drag = { last:pointerAngle(e), x:e.clientX, y:e.clientY, moved:false, target:e.target, idx:keyIndex() };
   try { wheel.setPointerCapture(e.pointerId); } catch(_){}
@@ -894,8 +944,11 @@ function endDrag(){
     if (!state.libre) state.angle = Math.round(state.angle/30)*30;
     render();
   } else {
-    const seg = drag.target && drag.target.closest ? drag.target.closest('.seg') : null;
-    if (seg){ goTo(+seg.dataset.i * 30); tick(); }
+    const t = drag.target && drag.target.closest ? drag.target : null;
+    const band = t && t.closest('[data-band]');
+    const seg = t && t.closest('.seg');
+    if (band){ plop(); copy(band.dataset.hex, `Copiado ${band.dataset.hex} · ${band.dataset.name}`); }
+    else if (seg){ goTo(+seg.dataset.i * 30); tick(); }
   }
   drag = null;
 }
