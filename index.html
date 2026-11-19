@@ -92,7 +92,7 @@ main{max-width:1240px;margin:0 auto;padding:4px clamp(16px,4vw,40px) 40px}
   .wheel-stage{position:sticky;top:16px}
 }
 .wheel-stage{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
-#wheel{width:min(100%,560px);aspect-ratio:1;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;display:block}
+#wheel{width:min(100%,620px);aspect-ratio:1;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;display:block}
 #wheel.dragging{cursor:grabbing}
 #wheel:focus,#wheel:focus-visible{outline:none}
 #wheel .focus-ring{fill:none;stroke:transparent;stroke-width:2.5}
@@ -115,6 +115,10 @@ main{max-width:1240px;margin:0 auto;padding:4px clamp(16px,4vw,40px) 40px}
 .arrow{stroke:#1F1D1A;stroke-width:2.2;fill:none}
 .pin{fill:#D2D1CD;stroke:#8A8985;stroke-width:1.2}
 .pointer{fill:var(--ink)}
+.print{font-family:"Inter",system-ui,sans-serif;fill:#34312D;pointer-events:none}
+.print .b{font-weight:700;fill:#1F1D1A}
+.rim-title{font-family:"Inter",system-ui,sans-serif;font-weight:700;font-size:10.5px;letter-spacing:.05em;fill:#1F1D1A;pointer-events:none}
+.ttm{font-family:"Inter",system-ui,sans-serif;font-weight:500;font-size:6.8px;fill:#34312D;pointer-events:none}
 .key-info{display:grid;gap:2px}
 .key-name{font-family:"Fraunces",Georgia,serif;font-size:clamp(1.6rem,3vw,2.1rem);line-height:1.1}
 .key-hex{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem;letter-spacing:.04em}
@@ -281,7 +285,7 @@ footer a{color:inherit}
   <section id="view-rueda" class="view" role="tabpanel" aria-labelledby="tab-rueda" tabindex="-1">
     <div class="wheel-layout">
       <div class="wheel-stage">
-        <svg id="wheel" viewBox="-282 -282 564 564" role="slider" tabindex="0"
+        <svg id="wheel" viewBox="-298 -298 596 596" role="slider" tabindex="0"
              aria-label="Rueda cromática. Usá las flechas para girarla."
              aria-valuemin="0" aria-valuemax="359" aria-valuenow="0" aria-valuetext="Amarillo">
           <defs>
@@ -296,8 +300,9 @@ footer a{color:inherit}
               <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#5a4a30" flood-opacity=".14"/>
             </filter>
           </defs>
-          <circle class="focus-ring" r="276"/>
-          <circle class="disc-base" r="268" filter="url(#discShadow)"/>
+          <circle class="focus-ring" r="292"/>
+          <circle class="disc-base" r="284" filter="url(#discShadow)"/>
+          <g id="rimTitle"></g>
           <g id="colorDisc"></g>
           <g id="overlay"></g>
         </svg>
@@ -639,6 +644,146 @@ function curvedLabel(parent, text, a, soft){
   if (soft){ const s2 = svgEl('tspan', { class:'soft' }, tp); s2.textContent = ' ' + soft; }
 }
 
+// ---------- Textos impresos del frente de la rueda ----------
+(function rimTitle(){
+  const g = $('#rimTitle');
+  const r = 271, [x1,y1] = pt(r, -70), [x2,y2] = pt(r, 70);
+  svgEl('path', { id:'rimArc', d:`M${x1} ${y1}A${r} ${r} 0 0 1 ${x2} ${y2}`, fill:'none' }, g);
+  const t = svgEl('text', { class:'rim-title' }, g);
+  const tp = svgEl('textPath', { href:'#rimArc', startOffset:'50%', 'text-anchor':'middle' }, t);
+  tp.textContent = 'ILUSTRACIÓN DE LAS RELACIONES Y ARMONÍAS ENTRE COLORES';
+})();
+
+const B = t => ({ t, b:true }), T = t => ({ t, b:false });
+const PRINTED = [
+  { // "Como usar", inclinado entre el color clave y la ventana de la izquierda
+    aMin:-60, aMax:-13, rIn:104, rOut:212, rot:-33, align:'middle',
+    paras:[[B('Como usar')],[B('el Círculo Cromático:')],
+      [T('Gire el color clave del círculo hasta el color puro escogido. En las ventanillas aparece la relación armónica de los colores según el diagrama.')]]
+  },
+  { // Bloque izquierdo
+    aMin:234, aMax:298, rIn:94, rOut:216, rot:0, align:'start',
+    paras:[
+      [B('Monocromático:'), T('Utilizando cualquier tono, tonalidad o matiz.')],
+      [B('Análogos:'), T('Usando cualquier tono, tonalidad o matiz de colores que estén situados a 90 grados en el círculo.')],
+      [B('Acromático:'), T('Esquema sin color utilizando blancos, grises y negro.')],
+      [B('Color y Luz:'), T('La luz tenue del anochecer, o de una candela, crea una distorsión o difuminación en el color. En estas circunstancias los colores claros necesitan más intensidad, y los colores oscuros menos.')],
+      [B('Color y Distancia:'), T('La distancia hace que los colores fríos parezcan más oscuros. Como consecuencia se deben usar los colores con tonalidades más claras para dar un mayor énfasis.')]
+    ]
+  },
+  { // Bloque derecho
+    aMin:58, aMax:124, rIn:94, rOut:216, rot:0, align:'start',
+    paras:[
+      [B('Armonía Complementaria:'), T('Combinando un tono, tonalidad, o matiz de un color y cruzándolo con el color opuesto; por ejemplo, azul y naranja.')],
+      [B('División Complementaria:'), T('Eligiendo un color y usando el color de cada lado del color complementario del Círculo Cromático.')],
+      [B('Díada:'), T('Usando dos colores del Círculo Cromático que estén separados entre ellos.')],
+      [B('Tríada:'), T('Conjunto de tres colores separados cada uno del otro de forma equidistante. Por ejemplo, los tres colores primarios: rojo-magenta, azul-cyan y amarillo.')],
+      [B('Tétrada:'), T('El contraste de cuatro o más colores en el Círculo Cromático.')]
+    ]
+  }
+];
+const angDiff = (a, b) => Math.abs(mod(a - b + 180, 360) - 180);
+const inArc = (a, lo, hi) => mod(a - lo, 360) <= mod(hi - lo, 360);
+
+function freeAt(x, y, blk, wins, labels){
+  const r = Math.hypot(x, y);
+  if (r < blk.rIn || r > blk.rOut) return false;
+  const a = mod(Math.atan2(x, -y)*180/Math.PI + blk.rot, 360);
+  if (!inArc(a, blk.aMin, blk.aMax)) return false;
+  for (const w of wins) if (r < 207 && angDiff(a, w) < 20) return false;
+  for (const l of labels) if (r > 199 && angDiff(a, l.a) < l.half) return false;
+  return true;
+}
+function runAt(y, fs, blk, wins, labels){
+  let best = null, start = null;
+  for (let x = -222; x <= 223; x++){
+    const ok = x <= 222 && freeAt(x, y, blk, wins, labels) && freeAt(x, y - fs*0.78, blk, wins, labels);
+    if (ok && start === null) start = x;
+    if (!ok && start !== null){
+      if (!best || x - start > best[1] - best[0]) best = [start, x - 1];
+      start = null;
+    }
+  }
+  return best && best[1] - best[0] > 26 ? [best[0] + 1.5, best[1] - 1.5] : null;
+}
+function layoutBlock(ws, fs, y0, blk, wins, labels, xMin = -Infinity){
+  const lh = fs*1.24, wW = w => w.w.length * fs * (w.b ? 0.6 : 0.53), sp = fs*0.27;
+  const lines = []; let i = 0, y = y0, lastPara = -1;
+  while (i < ws.length){
+    if (y > 222) return null;
+    const run = runAt(y, fs, blk, wins, labels);
+    if (!run){ if (lines.length) { y += lh; continue; } y += 1; if (y > 222) return null; continue; }
+    run[0] = Math.max(run[0], xMin);
+    if (run[1] - run[0] < 26){ y += lh; continue; }
+    const width = run[1] - run[0]; let used = 0; const line = [];
+    while (i < ws.length){
+      if (line.length && ws[i].p !== ws[i-1].p) break;
+      if (!line.length && ws[i].p !== lastPara && lastPara !== -1 && false) break;
+      const need = (line.length ? sp : 0) + wW(ws[i]);
+      if (line.length && used + need > width) break;
+      used += need; line.push(ws[i]); i++;
+    }
+    lastPara = line[line.length-1].p;
+    lines.push({ y, x0:run[0], x1:run[1], words:line });
+    y += lh;
+  }
+  return { lines, end:y - lh };
+}
+function drawPrintedText(){
+  const wins = HARMONIES[state.harmony].offsets.map(o => o*30);
+  const lab = HARM_LABEL[state.harmony];
+  const labels = wins.map(a => ({ a, half: ((a === 0 ? 30 : lab.length) * 9.5 * 0.62 / 2) / 213 * 180 / Math.PI + 2 }));
+  PRINTED.forEach(blk => {
+    const ws = [];
+    blk.paras.forEach((p, pi) => p.forEach(seg => seg.t.split(/\s+/).filter(Boolean).forEach(w => ws.push({ w, b:seg.b, p:pi }))));
+    let out = null, fsUsed = 0;
+    for (let fs = 6.4; fs >= 4.6 && !out; fs -= 0.2){
+      let yTop = -222;
+      while (yTop < 222 && !runAt(yTop, fs, blk, wins, labels)) yTop += 2;
+      let yBot = 222;
+      while (yBot > yTop && !runAt(yBot, fs, blk, wins, labels)) yBot -= 2;
+      const first = layoutBlock(ws, fs, yTop, blk, wins, labels);
+      if (!first || first.end > yBot) continue;
+      const slack = (yBot - first.end) / 2;
+      out = (slack > 2 && layoutBlock(ws, fs, yTop + slack, blk, wins, labels)) || first;
+      if (out.end > yBot) out = first;
+      fsUsed = fs;
+    }
+    if (!out) return; // sin lugar con esta armonía: el bloque no se muestra
+    if (blk.align === 'start'){
+      // margen izquierdo parejo, como en el impreso
+      const xs = out.lines.map(l => l.x0).sort((a, b) => a - b);
+      const xMin = xs[Math.floor(xs.length * 0.75)];
+      const y0 = out.lines[0].y;
+      const aligned = layoutBlock(ws, fsUsed, y0, blk, wins, labels, xMin);
+      if (aligned && aligned.end <= 222) out = aligned;
+    }
+    const g = svgEl('g', { class:'print', transform:`rotate(${blk.rot})`, 'font-size':fsUsed.toFixed(1) }, overlay);
+    out.lines.forEach(l => {
+      const x = blk.align === 'middle' ? (l.x0 + l.x1)/2 : l.x0;
+      const t = svgEl('text', { x:x.toFixed(1), y:l.y.toFixed(1), 'text-anchor':blk.align }, g);
+      l.words.forEach((w, k) => {
+        const s2 = svgEl('tspan', w.b ? { class:'b' } : {}, t);
+        s2.textContent = w.w + (k < l.words.length - 1 ? ' ' : '');
+      });
+    });
+  });
+
+  // TINTE · TONO · MATIZ, letra por letra al costado de cada ventana
+  wins.forEach(a => {
+    const side = [a + 16.5, a - 16.5].find(sa => !wins.some(w => w !== a && angDiff(sa, w) < 15));
+    if (side === undefined) return;
+    [['TINTE', 186], ['TONO', 150.5], ['MATIZ', 114.5]].forEach(([word, rc]) => {
+      const n = word.length, spc = 6.8;
+      [...word].forEach((ch, k) => {
+        const r = rc + (n-1)/2*spc - k*spc, [x, y] = pt(r, side);
+        const t = svgEl('text', { x, y, class:'ttm', 'text-anchor':'middle', 'dominant-baseline':'central', transform:`rotate(${side} ${x} ${y})` }, overlay);
+        t.textContent = ch;
+      });
+    });
+  });
+}
+
 // Disco blanco fijo con ventanas, etiquetas y diagrama central (se rearma al cambiar la armonía)
 function buildDial(){
   overlay.innerHTML = '';
@@ -678,7 +823,7 @@ function buildDial(){
   });
   svgEl('circle', { r:6.5, class:'pin' }, overlay);
   svgEl('circle', { r:2.6, fill:'#fff' }, overlay);
-  svgEl('path', { d:'M-9 -281L9 -281L0 -268Z', class:'pointer' }, overlay);
+  drawPrintedText();
 }
 
 function getPalette(){
