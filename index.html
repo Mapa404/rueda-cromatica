@@ -94,22 +94,27 @@ main{max-width:1240px;margin:0 auto;padding:4px clamp(16px,4vw,40px) 40px}
 .wheel-stage{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
 #wheel{width:min(100%,560px);aspect-ratio:1;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;display:block}
 #wheel.dragging{cursor:grabbing}
-#wheel:focus-visible{outline:none}
+#wheel:focus,#wheel:focus-visible{outline:none}
 #wheel .focus-ring{fill:none;stroke:transparent;stroke-width:2.5}
 #wheel:focus-visible .focus-ring{stroke:var(--ink)}
 .seg{cursor:pointer}
-.seg path{stroke:var(--bg);stroke-width:2.5;transition:opacity .35s ease}
-.dial-base{fill:var(--card);stroke:var(--line);stroke-width:1.5}
-#dial{transition:transform .55s cubic-bezier(.2,.8,.2,1)}
-#wheel.dragging #dial{transition:none}
-#dial.spin{transition:transform 1.5s cubic-bezier(.12,.85,.18,1)}
-.shape{fill:rgba(31,29,26,.06);stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
-.shape.ring{fill:none;stroke-dasharray:3 6;stroke-linecap:round}
-.spoke{stroke:var(--ink);stroke-width:1.4;stroke-dasharray:2 6;stroke-linecap:round;opacity:.5}
-.marker{fill:none;stroke:#fff;stroke-width:6}
-.marker-in{fill:none;stroke:var(--ink);stroke-width:1.6}
+.disc-base{fill:#FDFCF8;stroke:#E3DCCF;stroke-width:1.2}
+#colorDisc{transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+#wheel.dragging #colorDisc{transition:none}
+#colorDisc.spin{transition:transform 1.5s cubic-bezier(.12,.85,.18,1)}
+.ctab{stroke:rgba(0,0,0,.08);stroke-width:1;stroke-linejoin:round}
+.tab-label{font-family:"Inter",system-ui,sans-serif;font-weight:700;letter-spacing:.03em;pointer-events:none}
+.top-disc{fill:#FDFCF8;stroke:#FDFCF8;stroke-width:3;stroke-linejoin:round;fill-rule:evenodd}
+.win-edge{fill:none;stroke:rgba(0,0,0,.18);stroke-width:1;pointer-events:none}
+.win-sep{fill:none;stroke:#2A2826;stroke-width:1.6;pointer-events:none}
+.harm-label{font-family:"Inter",system-ui,sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.07em;fill:#2A2826;pointer-events:none}
+.harm-label .soft{font-weight:500;letter-spacing:.02em}
+.center-base{fill:#fff;stroke:#2A2826;stroke-width:2}
+.tmpl{fill:none;stroke:#8f8f8c;stroke-width:1;stroke-dasharray:3 3;opacity:.4}
+.shape-active{fill:url(#shapeGrad);stroke:#6E6D6A;stroke-width:1;stroke-linejoin:round}
+.arrow{stroke:#1F1D1A;stroke-width:2.2;fill:none}
+.pin{fill:#D2D1CD;stroke:#8A8985;stroke-width:1.2}
 .pointer{fill:var(--ink)}
-#keyDot{stroke:#fff;stroke-width:5;transition:fill .3s}
 .key-info{display:grid;gap:2px}
 .key-name{font-family:"Fraunces",Georgia,serif;font-size:clamp(1.6rem,3vw,2.1rem);line-height:1.1}
 .key-hex{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem;letter-spacing:.04em}
@@ -276,14 +281,25 @@ footer a{color:inherit}
   <section id="view-rueda" class="view" role="tabpanel" aria-labelledby="tab-rueda" tabindex="-1">
     <div class="wheel-layout">
       <div class="wheel-stage">
-        <svg id="wheel" viewBox="-274 -274 548 548" role="slider" tabindex="0"
+        <svg id="wheel" viewBox="-282 -282 564 564" role="slider" tabindex="0"
              aria-label="Rueda cromática. Usá las flechas para girarla."
              aria-valuemin="0" aria-valuemax="359" aria-valuenow="0" aria-valuetext="Amarillo">
-          <circle class="focus-ring" r="268"/>
-          <g id="segments"></g>
-          <circle class="dial-base" r="86"/>
-          <g id="dial"></g>
-          <circle id="keyDot" r="24"/>
+          <defs>
+            <linearGradient id="shapeGrad" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0" stop-color="#E6E5E2"/><stop offset=".5" stop-color="#BDBCB8"/>
+              <stop offset=".5" stop-color="#9E9D99"/><stop offset="1" stop-color="#CDCCC8"/>
+            </linearGradient>
+            <marker id="arrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M0 0L10 5L0 10Z" fill="#1F1D1A"/>
+            </marker>
+            <filter id="discShadow" x="-10%" y="-10%" width="120%" height="120%">
+              <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#5a4a30" flood-opacity=".14"/>
+            </filter>
+          </defs>
+          <circle class="focus-ring" r="276"/>
+          <circle class="disc-base" r="268" filter="url(#discShadow)"/>
+          <g id="colorDisc"></g>
+          <g id="overlay"></g>
         </svg>
 
         <div class="key-info" aria-live="polite">
@@ -409,8 +425,8 @@ footer a{color:inherit}
 'use strict';
 
 /* ---------- Datos ---------- */
-const ANCHORS = ['#F7D417','#F7AE1A','#F2832A','#EC5A2C','#E1302F','#BE2C6C','#7D3F9E','#4C41A6','#2D5CC5','#16999A','#36A649','#A3C43A'];
-const NAMES = ['Amarillo','Amarillo-naranja','Naranja','Rojo-naranja','Rojo','Rojo-violeta','Violeta','Azul-violeta','Azul','Azul-verde','Verde','Amarillo-verde'];
+const ANCHORS = ['#F7DF1E','#8CC23F','#3D9E48','#1F9A87','#34489C','#4E2C85','#5B2577','#8A1D4E','#C9222F','#DB3A2C','#E8622E','#F29234'];
+const NAMES = ['Amarillo','Amarillo-verde','Verde','Azul-verde','Azul','Azul-violeta','Violeta','Rojo-violeta','Rojo','Rojo-naranja','Naranja','Amarillo-naranja'];
 
 const HARMONIES = {
   complementarios: { label:'Complementarios', offsets:[0,6], desc:'Dos colores opuestos en la rueda. Es el contraste máximo: uno hace brillar al otro. Funciona mejor con uno de protagonista y el otro para acentos.' },
@@ -442,7 +458,7 @@ const store = {
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
 };
 
-const state = { angle:120, harmony:'complementarios', variant:'puro', libre:false, sound:store.get('rc-sound', true) };
+const state = { angle:90, harmony:'complementarios', variant:'puro', libre:false, sound:store.get('rc-sound', true) };
 const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = s => document.querySelector(s);
 const mod = (n, m) => ((n % m) + m) % m;
@@ -482,9 +498,9 @@ function hueAt(deg){
 }
 const nameAt = deg => NAMES[Math.round(mod(deg,360)/30) % 12];
 function variantHex(hex, v){
-  if (v === 'tinte') return mixHex(hex, '#FFFFFF', .45);
-  if (v === 'tono') return mixHex(hex, '#8A8A8A', .45);
-  if (v === 'sombra') return mixHex(hex, '#000000', .42);
+  if (v === 'tinte') return mixHex(hex, '#FFFFFF', .5);
+  if (v === 'tono') return mixHex(hex, '#9A9A96', .55);
+  if (v === 'sombra') return mixHex(hex, '#000000', .36);
   return hex;
 }
 const relLum = hex => { const [r,g,b] = hexToRgb(hex).map(toLin); return 0.2126*r + 0.7152*g + 0.0722*b; };
@@ -511,7 +527,7 @@ function describe(hex){
   const deg = nearestHueAngle(hex);
   const idx = Math.round(deg/30) % 12;
   const pure = hexToLab(ANCHORS[idx]);
-  if ([1,2,3].includes(idx) && L < pure[0] - 0.12) return C < 0.08 ? 'Marrón apagado' : 'Marrón';
+  if ([9,10,11].includes(idx) && L < pure[0] - 0.12) return C < 0.08 ? 'Marrón apagado' : 'Marrón';
   let n = NAMES[idx];
   if (L > pure[0] + 0.08) n += ' claro';
   else if (L < pure[0] - 0.08) n += ' oscuro';
@@ -589,37 +605,80 @@ function arc(r1, r2, a1, a2){
   const [x1,y1] = pt(r2,a1), [x2,y2] = pt(r2,a2), [x3,y3] = pt(r1,a2), [x4,y4] = pt(r1,a1);
   return `M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z`;
 }
-const RINGS = [['puro',206,254],['tinte',166,202],['tono',128,162],['sombra',92,124]];
-const wheel = $('#wheel'), segLayer = $('#segments'), dial = $('#dial'), keyDot = $('#keyDot');
-const segPaths = [];
-for (let i = 0; i < 12; i++){
-  const g = svgEl('g', { class:'seg', 'data-i':i }, segLayer);
-  const rings = {};
-  RINGS.forEach(([k, r1, r2]) => {
-    rings[k] = svgEl('path', { d:arc(r1, r2, i*30-15, i*30+15), fill:variantHex(ANCHORS[i], k) }, g);
-  });
-  segPaths.push(rings);
+const wheel = $('#wheel'), colorDisc = $('#colorDisc'), overlay = $('#overlay');
+const DISC_BG = '#FDFCF8';
+// Disco de color (gira): pestañas con el nombre y, debajo, tinte / tono / matiz de cada color
+(function buildColorDisc(){
+  const defs = wheel.querySelector('defs');
+  for (let i = 0; i < 12; i++){
+    const a = i*30, g = svgEl('g', { class:'seg', 'data-i':i }, colorDisc);
+    svgEl('path', { d:arc(168, 204, a-15, a+15), fill:variantHex(ANCHORS[i], 'tinte') }, g);
+    svgEl('path', { d:arc(133, 168, a-15, a+15), fill:variantHex(ANCHORS[i], 'tono') }, g);
+    svgEl('path', { d:arc(96, 133, a-15, a+15), fill:variantHex(ANCHORS[i], 'sombra') }, g);
+    svgEl('path', { d:arc(229, 263, a-13.6, a+13.6), fill:ANCHORS[i], class:'ctab' }, g);
+    const [x1,y1] = pt(242, a-14), [x2,y2] = pt(242, a+14);
+    svgEl('path', { id:'tabArc'+i, d:`M${x1} ${y1}A242 242 0 0 1 ${x2} ${y2}`, fill:'none' }, defs);
+    const label = NAMES[i].toUpperCase();
+    const t = svgEl('text', { class:'tab-label', fill:textOn(ANCHORS[i]), 'font-size': label.length > 12 ? 10 : 12 }, g);
+    const tp = svgEl('textPath', { href:'#tabArc'+i, startOffset:'50%', 'text-anchor':'middle' }, t);
+    tp.textContent = label;
+  }
+})();
+
+const HARM_LABEL = { complementarios:'COMPLEMENTARIO', analogos:'ANÁLOGO', triada:'TRÍADA', dividido:'DIVISIÓN COMPLEMENTARIA', tetrada:'TÉTRADA', cuadrado:'CUADRADO', mono:'' };
+let labelSeq = 0;
+function curvedLabel(parent, text, a, soft){
+  const bottom = mod(a, 360) > 90 && mod(a, 360) < 270;
+  const r = bottom ? 218 : 209, span = 40;
+  const [x1,y1] = pt(r, bottom ? a+span : a-span), [x2,y2] = pt(r, bottom ? a-span : a+span);
+  const id = 'hl' + (labelSeq++);
+  svgEl('path', { id, d:`M${x1} ${y1}A${r} ${r} 0 0 ${bottom ? 0 : 1} ${x2} ${y2}`, fill:'none' }, parent);
+  const t = svgEl('text', { class:'harm-label' }, parent);
+  const tp = svgEl('textPath', { href:'#'+id, startOffset:'50%', 'text-anchor':'middle' }, t);
+  tp.textContent = text;
+  if (soft){ const s2 = svgEl('tspan', { class:'soft' }, tp); s2.textContent = ' ' + soft; }
 }
 
+// Disco blanco fijo con ventanas, etiquetas y diagrama central (se rearma al cambiar la armonía)
 function buildDial(){
-  dial.innerHTML = '';
+  overlay.innerHTML = '';
   const offs = HARMONIES[state.harmony].offsets;
-  if (offs.length >= 2){
-    const pts = offs.slice().sort((a,b) => a-b).map(o => pt(66, o*30).join(',')).join(' ');
-    svgEl('polygon', { points:pts, class:'shape' }, dial);
+  let d = 'M0 -222A222 222 0 1 1 0 222A222 222 0 1 1 0 -222Z';
+  offs.forEach(o => { d += arc(98, 202, o*30-13, o*30+13); });
+  svgEl('path', { d, class:'top-disc' }, overlay);
+  offs.forEach(o => {
+    const a = o*30;
+    [133, 168].forEach(r => {
+      const [x1,y1] = pt(r, a-12.6), [x2,y2] = pt(r, a+12.6);
+      svgEl('path', { d:`M${x1} ${y1}A${r} ${r} 0 0 1 ${x2} ${y2}`, class:'win-sep' }, overlay);
+    });
+    if (o === 0) curvedLabel(overlay, 'COLOR CLAVE', a, '(color puro)');
+    else curvedLabel(overlay, HARM_LABEL[state.harmony], a);
+  });
+
+  // Centro: plantilla de figuras y la figura activa en gris con flechas
+  svgEl('circle', { r:90, class:'center-base' }, overlay);
+  const poly = (angles, r = 80) => angles.map(x => pt(r, x).join(',')).join(' ');
+  svgEl('polygon', { points:poly([0,120,240]), class:'tmpl' }, overlay);
+  svgEl('polygon', { points:poly([0,60,180,240]), class:'tmpl' }, overlay);
+  svgEl('polygon', { points:poly([0,150,210]), class:'tmpl' }, overlay);
+  const angs = offs.map(o => o*30);
+  if (state.harmony === 'complementarios'){
+    svgEl('polygon', { points:[pt(80,0), pt(16,90), pt(80,180), pt(16,270)].map(p => p.join(',')).join(' '), class:'shape-active' }, overlay);
+  } else if (state.harmony === 'analogos'){
+    svgEl('polygon', { points:['0,0', ...angs.map(x => pt(80, x).join(','))].join(' '), class:'shape-active' }, overlay);
+  } else if (state.harmony === 'mono'){
+    svgEl('circle', { r:70, class:'tmpl', style:'opacity:.7' }, overlay);
   } else {
-    svgEl('circle', { r:62, class:'shape ring' }, dial);
+    svgEl('polygon', { points:poly(angs.slice().sort((x,y) => x-y)), class:'shape-active' }, overlay);
   }
-  offs.forEach(o => {
-    const [x1,y1] = pt(88, o*30), [x2,y2] = pt(212, o*30);
-    svgEl('line', { x1, y1, x2, y2, class:'spoke' }, dial);
+  angs.forEach(x => {
+    const [x2,y2] = pt(76, x);
+    svgEl('line', { x1:0, y1:0, x2, y2, class:'arrow', 'marker-end':'url(#arrowHead)' }, overlay);
   });
-  offs.forEach(o => {
-    const [cx, cy] = pt(230, o*30), r = o === 0 ? 17 : 13;
-    svgEl('circle', { cx, cy, r, class:'marker' }, dial);
-    svgEl('circle', { cx, cy, r, class:'marker-in' }, dial);
-  });
-  svgEl('path', { d:'M-10 -273L10 -273L0 -257Z', class:'pointer' }, dial);
+  svgEl('circle', { r:6.5, class:'pin' }, overlay);
+  svgEl('circle', { r:2.6, fill:'#fff' }, overlay);
+  svgEl('path', { d:'M-9 -281L9 -281L0 -268Z', class:'pointer' }, overlay);
 }
 
 function getPalette(){
@@ -645,18 +704,8 @@ function getPalette(){
 let currentPalette = [];
 function render(){
   const key = mod(state.angle, 360);
-  const h = HARMONIES[state.harmony];
-  const selected = new Set(h.offsets.map(o => mod(Math.round((key + o*30)/30), 12)));
-  segPaths.forEach((rings, i) => {
-    for (const k in rings){
-      let op = 0.26;
-      if (selected.has(i)) op = (state.harmony === 'mono' || k === state.variant) ? 1 : 0.55;
-      rings[k].style.opacity = op;
-    }
-  });
-  dial.style.transform = `rotate(${state.angle}deg)`;
+  colorDisc.style.transform = `rotate(${-state.angle}deg)`;
   const keyHex = hueAt(key);
-  keyDot.setAttribute('fill', keyHex);
   wheel.setAttribute('aria-valuenow', Math.round(key));
   wheel.setAttribute('aria-valuetext', nameAt(key));
   $('#keyName').textContent = nameAt(key);
@@ -729,7 +778,7 @@ wheel.addEventListener('pointermove', e => {
   drag.moved = true;
   wheel.classList.add('dragging');
   const a = pointerAngle(e);
-  state.angle += mod(a - drag.last + 180, 360) - 180;
+  state.angle -= mod(a - drag.last + 180, 360) - 180;
   drag.last = a;
   const idx = keyIndex();
   if (idx !== drag.idx){ drag.idx = idx; tick(); }
@@ -761,12 +810,12 @@ function step(dir){
   tick(); render();
 }
 wheel.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowUp'){ e.preventDefault(); step(1); }
-  else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown'){ e.preventDefault(); step(-1); }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowUp'){ e.preventDefault(); step(-1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown'){ e.preventDefault(); step(1); }
   else if (e.key === 'Home'){ e.preventDefault(); goTo(0); }
 });
-$('#prevBtn').addEventListener('click', () => step(-1));
-$('#nextBtn').addEventListener('click', () => step(1));
+$('#prevBtn').addEventListener('click', () => step(1));
+$('#nextBtn').addEventListener('click', () => step(-1));
 $('#libre').addEventListener('change', e => {
   state.libre = e.target.checked;
   if (!state.libre){ state.angle = Math.round(state.angle/30)*30; render(); }
@@ -775,12 +824,12 @@ $('#libre').addEventListener('change', e => {
 $('#surprise').addEventListener('click', () => {
   const keys = Object.keys(HARMONIES).filter(k => k !== state.harmony);
   setHarmony(keys[Math.floor(Math.random()*keys.length)], false);
-  dial.classList.add('spin');
+  colorDisc.classList.add('spin');
   const extra = state.libre ? Math.random()*360 : Math.floor(Math.random()*12)*30;
   state.angle = Math.round(state.angle/30)*30 + 720 + extra;
   whoosh();
   render();
-  setTimeout(() => { dial.classList.remove('spin'); tick(); }, reduced ? 0 : 1500);
+  setTimeout(() => { colorDisc.classList.remove('spin'); tick(); }, reduced ? 0 : 1500);
 });
 
 /* Armonías y variantes */
