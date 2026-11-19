@@ -47,7 +47,7 @@ button{font:inherit;color:inherit}
 .skip:focus{top:12px}
 
 /* Header */
-.top{display:flex;align-items:center;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;padding:22px clamp(16px,4vw,40px);max-width:1240px;margin:0 auto}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;padding:22px clamp(16px,4vw,40px);max-width:1440px;margin:0 auto}
 .brand{display:flex;align-items:center;gap:14px}
 .brand-mark{width:42px;height:42px;border-radius:50%;flex:none;background:conic-gradient(#F7D417,#F7AE1A,#F2832A,#EC5A2C,#E1302F,#BE2C6C,#7D3F9E,#4C41A6,#2D5CC5,#16999A,#36A649,#A3C43A,#F7D417);position:relative;animation:spin 30s linear infinite}
 .brand-mark::after{content:"";position:absolute;inset:11px;border-radius:50%;background:var(--bg)}
@@ -61,7 +61,7 @@ h1{font-size:1.6rem;margin:0;line-height:1.1}
 .icon-btn[aria-pressed="true"]{color:var(--ink)}
 .icon-btn[aria-pressed="false"] .wave{opacity:.25}
 
-main{max-width:1240px;margin:0 auto;padding:4px clamp(16px,4vw,40px) 40px}
+main{max-width:1440px;margin:0 auto;padding:4px clamp(16px,4vw,40px) 40px}
 .view[hidden]{display:none}
 .view{animation:fade .35s ease}
 
@@ -88,11 +88,11 @@ main{max-width:1240px;margin:0 auto;padding:4px clamp(16px,4vw,40px) 40px}
 /* Wheel layout */
 .wheel-layout{display:grid;gap:28px;grid-template-columns:1fr}
 @media (min-width:980px){
-  .wheel-layout{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start}
+  .wheel-layout{grid-template-columns:minmax(0,1.45fr) minmax(360px,1fr);align-items:start}
   .wheel-stage{position:sticky;top:16px}
 }
 .wheel-stage{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
-#wheel{width:min(100%,620px);aspect-ratio:1;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;display:block}
+#wheel{width:min(100%,920px);aspect-ratio:1;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;display:block}
 #wheel.dragging{cursor:grabbing}
 #wheel:focus,#wheel:focus-visible{outline:none}
 #wheel .focus-ring{fill:none;stroke:transparent;stroke-width:2.5}
@@ -123,6 +123,10 @@ main{max-width:1240px;margin:0 auto;padding:4px clamp(16px,4vw,40px) 40px}
 .key-name{font-family:"Fraunces",Georgia,serif;font-size:clamp(1.6rem,3vw,2.1rem);line-height:1.1}
 .key-hex{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem;letter-spacing:.04em}
 .wheel-controls{display:flex;align-items:center;gap:12px}
+.wheel-layout.big{grid-template-columns:1fr!important}
+.wheel-layout.big .wheel-stage{position:static}
+.wheel-layout.big #wheel{width:min(100%,1300px)}
+.zoom-btn{display:inline-flex;align-items:center;gap:8px}
 .hint{margin:0;color:var(--muted);font-size:.86rem}
 
 .switch{display:inline-flex;align-items:center;gap:10px;cursor:pointer;font-size:.92rem;user-select:none}
@@ -232,7 +236,7 @@ main{max-width:1240px;margin:0 auto;padding:4px clamp(16px,4vw,40px) 40px}
 .streak{font-size:.85rem;padding:5px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);font-variant-numeric:tabular-nums}
 .streak.pop{animation:bump .4s ease}
 
-footer{max-width:1240px;margin:0 auto;padding:10px clamp(16px,4vw,40px) 36px;color:var(--muted);font-size:.85rem}
+footer{max-width:1440px;margin:0 auto;padding:10px clamp(16px,4vw,40px) 36px;color:var(--muted);font-size:.85rem}
 footer a{color:inherit}
 
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60}
@@ -319,6 +323,10 @@ footer a{color:inherit}
           <button class="round" id="nextBtn" type="button" aria-label="Girar hacia la derecha">→</button>
         </div>
 
+        <button class="ghost zoom-btn" id="zoomBtn" type="button" aria-pressed="false">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 8v6M8 11h6"/></svg>
+          <span>Agrandar la rueda</span>
+        </button>
         <label class="switch">
           <input type="checkbox" id="libre">
           <span class="track" aria-hidden="true"></span>
@@ -737,7 +745,7 @@ function drawPrintedText(){
     const ws = [];
     blk.paras.forEach((p, pi) => p.forEach(seg => seg.t.split(/\s+/).filter(Boolean).forEach(w => ws.push({ w, b:seg.b, p:pi }))));
     let out = null, fsUsed = 0;
-    for (let fs = 6.4; fs >= 4.6 && !out; fs -= 0.2){
+    for (let fs = 7; fs >= 4.6 && !out; fs -= 0.2){
       let yTop = -222;
       while (yTop < 222 && !runAt(yTop, fs, blk, wins, labels)) yTop += 2;
       let yBot = 222;
@@ -961,6 +969,16 @@ wheel.addEventListener('keydown', e => {
 });
 $('#prevBtn').addEventListener('click', () => step(1));
 $('#nextBtn').addEventListener('click', () => step(-1));
+const zoomBtn = $('#zoomBtn'), layout = document.querySelector('.wheel-layout');
+function setZoom(on, scroll){
+  layout.classList.toggle('big', on);
+  zoomBtn.setAttribute('aria-pressed', on);
+  zoomBtn.querySelector('span').textContent = on ? 'Achicar la rueda' : 'Agrandar la rueda';
+  store.set('rc-zoom', on);
+  if (scroll) wheel.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block:'start' });
+}
+zoomBtn.addEventListener('click', () => { setZoom(!layout.classList.contains('big'), true); tick(); });
+setZoom(store.get('rc-zoom', false), false);
 $('#libre').addEventListener('change', e => {
   state.libre = e.target.checked;
   if (!state.libre){ state.angle = Math.round(state.angle/30)*30; render(); }
